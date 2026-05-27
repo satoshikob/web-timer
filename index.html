@@ -2,13 +2,14 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>Webタイマー</title>
   <style>
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
+      -webkit-tap-highlight-color: transparent;
     }
 
     body {
@@ -20,7 +21,8 @@
       align-items: center;
       justify-content: center;
       min-height: 100vh;
-      gap: 32px;
+      gap: clamp(16px, 3vw, 32px);
+      padding: 24px 16px;
     }
 
     h1 {
@@ -29,14 +31,22 @@
       color: #a8b8d8;
     }
 
+    /* ── タイマー数字（タップ可） ── */
     .timer-display {
-      font-size: 8rem;
+      font-size: clamp(5rem, 20vw, 9rem);
       font-weight: 200;
       letter-spacing: 0.05em;
       font-variant-numeric: tabular-nums;
       color: #e0e8ff;
       text-shadow: 0 0 40px rgba(100, 160, 255, 0.4);
-      transition: color 0.3s;
+      transition: color 0.3s, transform 0.1s;
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .timer-display:active {
+      transform: scale(0.96);
     }
 
     .timer-display.running {
@@ -55,6 +65,47 @@
       to   { opacity: 0.5; }
     }
 
+    /* ── スタート/ストップ & リセットボタン ── */
+    .controls {
+      display: flex;
+      gap: 12px;
+    }
+
+    .btn {
+      border: none;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 600;
+      padding: 14px 32px;
+      min-width: 130px;
+      min-height: 52px;
+      cursor: pointer;
+      transition: filter 0.15s, transform 0.1s;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .btn:active {
+      transform: scale(0.95);
+      filter: brightness(0.85);
+    }
+
+    .btn-start {
+      background: #2a6aff;
+      color: #fff;
+    }
+
+    .btn-start.is-running {
+      background: #1a8a4a;
+    }
+
+    .btn-reset {
+      background: #1e2e4a;
+      color: #7a9acf;
+      border: 1px solid #2a3a5a;
+    }
+
+    /* ── 入力欄 ── */
     .input-row {
       display: flex;
       gap: 12px;
@@ -98,6 +149,7 @@
       padding-top: 16px;
     }
 
+    /* ── プリセット ── */
     .presets {
       display: flex;
       gap: 10px;
@@ -110,16 +162,15 @@
       border: 1px solid #2a3a5a;
       border-radius: 8px;
       color: #7a9acf;
-      font-size: 0.9rem;
-      padding: 8px 18px;
+      font-size: 0.95rem;
+      padding: 10px 20px;
+      min-height: 44px;
       cursor: pointer;
       transition: background 0.15s, border-color 0.15s, color 0.15s;
     }
 
-    .preset-btn:hover {
-      background: #162540;
-      border-color: #4a7aff;
-      color: #b0c8ff;
+    .preset-btn:active {
+      transform: scale(0.95);
     }
 
     .preset-btn.active {
@@ -127,18 +178,21 @@
       color: #4a7aff;
     }
 
+    /* ── ステータス ── */
     .status {
       font-size: 0.9rem;
       color: #5a6a8a;
       height: 1.2em;
+      text-align: center;
     }
 
+    /* ── 説明書き ── */
     .instructions {
       background: #0d1b33;
       border: 1px solid #1e2e4a;
       border-radius: 12px;
-      padding: 20px 28px;
-      max-width: 360px;
+      padding: 20px 24px;
+      max-width: 400px;
       width: 100%;
     }
 
@@ -158,7 +212,7 @@
     }
 
     .instructions li {
-      font-size: 0.88rem;
+      font-size: 0.85rem;
       color: #8898b8;
       display: flex;
       gap: 10px;
@@ -185,6 +239,12 @@
 
   <div class="timer-display" id="display">00:00</div>
 
+  <!-- ▶/⏸ と リセット ボタン -->
+  <div class="controls">
+    <button class="btn btn-start" id="btnStart">▶ スタート</button>
+    <button class="btn btn-reset" id="btnReset">↺ リセット</button>
+  </div>
+
   <div class="input-row">
     <div class="input-group">
       <label>分</label>
@@ -204,31 +264,37 @@
     <button class="preset-btn" data-sec="60">1分</button>
   </div>
 
-  <div class="status" id="status">スペースキーでスタート</div>
+  <div class="status" id="status">タップまたはスペースキーでスタート</div>
 
   <div class="instructions">
     <h2>操作方法</h2>
     <ul>
       <li>
-        <span class="key">Space</span>
-        スタート / ストップ
+        <span class="key">タップ / Space</span>
+        スタート・ストップ（数字部分のタップも可）
       </li>
       <li>
-        <span class="key">Enter</span>
+        <span class="key">↺ / Enter</span>
         指定した時間にリセットして再スタート
       </li>
       <li>
+        <span class="key">プリセット</span>
+        よく使う時間を即スタート
+      </li>
+      <li>
         <span class="key">分 / 秒</span>
-        入力欄で時間を設定（分・秒で指定可）
+        入力欄で時間を自由に設定
       </li>
     </ul>
   </div>
 
   <script>
-    const display  = document.getElementById('display');
-    const status   = document.getElementById('status');
-    const inputMin = document.getElementById('inputMin');
-    const inputSec = document.getElementById('inputSec');
+    const display   = document.getElementById('display');
+    const status    = document.getElementById('status');
+    const inputMin  = document.getElementById('inputMin');
+    const inputSec  = document.getElementById('inputSec');
+    const btnStart  = document.getElementById('btnStart');
+    const btnReset  = document.getElementById('btnReset');
     const presetBtns = document.querySelectorAll('.preset-btn');
 
     let remaining = 10;
@@ -236,22 +302,35 @@
     let interval  = null;
     let running   = false;
 
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    // AudioContext は最初のユーザー操作まで suspend される（iOS 対策）
+    let audioCtx = null;
+    function getAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      return audioCtx;
+    }
 
     function playFinishSound() {
-      // 3回ビープ
-      [0, 0.35, 0.7].forEach((offset) => {
-        const osc  = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(880, audioCtx.currentTime + offset);
-        gain.gain.setValueAtTime(0.5, audioCtx.currentTime + offset);
-        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + offset + 0.25);
-        osc.start(audioCtx.currentTime + offset);
-        osc.stop(audioCtx.currentTime + offset + 0.25);
+      const ctx = getAudio();
+      ctx.resume().then(() => {
+        [0, 0.35, 0.7].forEach((offset) => {
+          const osc  = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(880, ctx.currentTime + offset);
+          gain.gain.setValueAtTime(0.5, ctx.currentTime + offset);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + offset + 0.25);
+          osc.start(ctx.currentTime + offset);
+          osc.stop(ctx.currentTime + offset + 0.25);
+        });
       });
+    }
+
+    function resumeAudio() {
+      getAudio().resume();
     }
 
     function setActivePreset(sec) {
@@ -274,6 +353,16 @@
       display.textContent = format(remaining);
     }
 
+    function updateStartBtn() {
+      if (running) {
+        btnStart.textContent = '⏸ ストップ';
+        btnStart.classList.add('is-running');
+      } else {
+        btnStart.textContent = '▶ スタート';
+        btnStart.classList.remove('is-running');
+      }
+    }
+
     function setStatus(text) {
       status.textContent = text;
     }
@@ -283,13 +372,12 @@
       running = true;
       display.classList.add('running');
       display.classList.remove('finished');
-      setStatus('実行中… スペースキーで一時停止');
+      setStatus('実行中… タップで一時停止');
+      updateStartBtn();
       interval = setInterval(() => {
         remaining--;
         updateDisplay();
-        if (remaining <= 0) {
-          finish();
-        }
+        if (remaining <= 0) finish();
       }, 1000);
     }
 
@@ -298,20 +386,21 @@
       clearInterval(interval);
       interval = null;
       display.classList.remove('running');
-      setStatus('一時停止中 — スペースキーで再開 / Enterでリセット');
+      setStatus('一時停止中 — タップで再開 / ↺ でリセット');
+      updateStartBtn();
     }
 
     function finish() {
       stop();
       display.classList.add('finished');
-      setStatus('時間になりました！ Enterでリセット');
+      setStatus('時間になりました！ ↺ でリセット');
       playFinishSound();
     }
 
     function reset() {
       clearInterval(interval);
-      interval = null;
-      running  = false;
+      interval  = null;
+      running   = false;
       display.classList.remove('running', 'finished');
 
       total     = getInputSeconds();
@@ -319,6 +408,7 @@
 
       if (total <= 0) {
         updateDisplay();
+        updateStartBtn();
         setStatus('時間を設定してください');
         return;
       }
@@ -327,30 +417,40 @@
       start();
     }
 
-    updateDisplay();
+    function toggleStartStop() {
+      resumeAudio();
+      if (running) {
+        stop();
+      } else {
+        if (remaining > 0) start();
+        else setStatus('↺ でリセットしてください');
+      }
+    }
 
+    // ── ボタンイベント ──
+    btnStart.addEventListener('click', toggleStartStop);
+    btnReset.addEventListener('click', () => { resumeAudio(); reset(); });
+
+    // タイマー数字タップでもスタート/ストップ
+    display.addEventListener('click', toggleStartStop);
+
+    // ── キーボードショートカット ──
     document.addEventListener('keydown', (e) => {
       if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName) &&
           e.key !== ' ' && e.key !== 'Enter') return;
 
       if (e.key === ' ') {
         e.preventDefault();
-        audioCtx.resume();
-        if (running) {
-          stop();
-        } else {
-          if (remaining > 0) start();
-          else setStatus('Enterでリセットしてください');
-        }
+        toggleStartStop();
       }
-
       if (e.key === 'Enter') {
         e.preventDefault();
-        audioCtx.resume();
+        resumeAudio();
         reset();
       }
     });
 
+    // ── 入力欄 ──
     inputMin.addEventListener('change', () => {
       if (!running) { remaining = getInputSeconds(); updateDisplay(); setActivePreset(-1); }
     });
@@ -358,9 +458,10 @@
       if (!running) { remaining = getInputSeconds(); updateDisplay(); setActivePreset(-1); }
     });
 
+    // ── プリセット ──
     presetBtns.forEach(btn => {
       btn.addEventListener('click', () => {
-        audioCtx.resume();
+        resumeAudio();
         const sec = parseInt(btn.dataset.sec);
         inputMin.value = Math.floor(sec / 60);
         inputSec.value = sec % 60;
@@ -375,6 +476,9 @@
         start();
       });
     });
+
+    updateDisplay();
+    updateStartBtn();
   </script>
 </body>
 </html>
