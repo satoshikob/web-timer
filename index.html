@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Webタイマー</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: #1a1a2e;
+      color: #eee;
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      gap: 32px;
+    }
+
+    h1 {
+      font-size: 1.4rem;
+      letter-spacing: 0.1em;
+      color: #a8b8d8;
+    }
+
+    .timer-display {
+      font-size: 8rem;
+      font-weight: 200;
+      letter-spacing: 0.05em;
+      font-variant-numeric: tabular-nums;
+      color: #e0e8ff;
+      text-shadow: 0 0 40px rgba(100, 160, 255, 0.4);
+      transition: color 0.3s;
+    }
+
+    .timer-display.running {
+      color: #7fff9a;
+      text-shadow: 0 0 40px rgba(100, 255, 150, 0.4);
+    }
+
+    .timer-display.finished {
+      color: #ff7f7f;
+      text-shadow: 0 0 40px rgba(255, 100, 100, 0.5);
+      animation: pulse 0.8s ease-in-out infinite alternate;
+    }
+
+    @keyframes pulse {
+      from { opacity: 1; }
+      to   { opacity: 0.5; }
+    }
+
+    .input-row {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .input-group label {
+      font-size: 0.75rem;
+      color: #7888a8;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .input-group input {
+      width: 80px;
+      padding: 8px 12px;
+      font-size: 1.6rem;
+      text-align: center;
+      background: #0d1b33;
+      border: 1px solid #2a3a5a;
+      border-radius: 8px;
+      color: #e0e8ff;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .input-group input:focus {
+      border-color: #4a7aff;
+    }
+
+    .input-sep {
+      font-size: 2rem;
+      color: #4a5a7a;
+      padding-top: 16px;
+    }
+
+    .presets {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .preset-btn {
+      background: #0d1b33;
+      border: 1px solid #2a3a5a;
+      border-radius: 8px;
+      color: #7a9acf;
+      font-size: 0.9rem;
+      padding: 8px 18px;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+    }
+
+    .preset-btn:hover {
+      background: #162540;
+      border-color: #4a7aff;
+      color: #b0c8ff;
+    }
+
+    .preset-btn.active {
+      border-color: #4a7aff;
+      color: #4a7aff;
+    }
+
+    .status {
+      font-size: 0.9rem;
+      color: #5a6a8a;
+      height: 1.2em;
+    }
+
+    .instructions {
+      background: #0d1b33;
+      border: 1px solid #1e2e4a;
+      border-radius: 12px;
+      padding: 20px 28px;
+      max-width: 360px;
+      width: 100%;
+    }
+
+    .instructions h2 {
+      font-size: 0.75rem;
+      color: #5a7aaa;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      margin-bottom: 12px;
+    }
+
+    .instructions ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .instructions li {
+      font-size: 0.88rem;
+      color: #8898b8;
+      display: flex;
+      gap: 10px;
+      align-items: baseline;
+    }
+
+    .key {
+      display: inline-block;
+      background: #1a2a4a;
+      border: 1px solid #2e4a70;
+      border-radius: 5px;
+      padding: 1px 8px;
+      font-size: 0.78rem;
+      font-family: monospace;
+      color: #aac0e0;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>タイマー</h1>
+
+  <div class="timer-display" id="display">00:00</div>
+
+  <div class="input-row">
+    <div class="input-group">
+      <label>分</label>
+      <input type="number" id="inputMin" min="0" max="99" value="0" placeholder="0">
+    </div>
+    <span class="input-sep">:</span>
+    <div class="input-group">
+      <label>秒</label>
+      <input type="number" id="inputSec" min="0" max="59" value="10" placeholder="0">
+    </div>
+  </div>
+
+  <div class="presets">
+    <button class="preset-btn" data-sec="15">15秒</button>
+    <button class="preset-btn" data-sec="30">30秒</button>
+    <button class="preset-btn" data-sec="40">40秒</button>
+    <button class="preset-btn" data-sec="60">1分</button>
+  </div>
+
+  <div class="status" id="status">スペースキーでスタート</div>
+
+  <div class="instructions">
+    <h2>操作方法</h2>
+    <ul>
+      <li>
+        <span class="key">Space</span>
+        スタート / ストップ
+      </li>
+      <li>
+        <span class="key">Enter</span>
+        指定した時間にリセットして再スタート
+      </li>
+      <li>
+        <span class="key">分 / 秒</span>
+        入力欄で時間を設定（分・秒で指定可）
+      </li>
+    </ul>
+  </div>
+
+  <script>
+    const display  = document.getElementById('display');
+    const status   = document.getElementById('status');
+    const inputMin = document.getElementById('inputMin');
+    const inputSec = document.getElementById('inputSec');
+    const presetBtns = document.querySelectorAll('.preset-btn');
+
+    let remaining = 10;
+    let total     = 10;
+    let interval  = null;
+    let running   = false;
+
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    function playFinishSound() {
+      // 3回ビープ
+      [0, 0.35, 0.7].forEach((offset) => {
+        const osc  = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(880, audioCtx.currentTime + offset);
+        gain.gain.setValueAtTime(0.5, audioCtx.currentTime + offset);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + offset + 0.25);
+        osc.start(audioCtx.currentTime + offset);
+        osc.stop(audioCtx.currentTime + offset + 0.25);
+      });
+    }
+
+    function setActivePreset(sec) {
+      presetBtns.forEach(b => b.classList.toggle('active', parseInt(b.dataset.sec) === sec));
+    }
+
+    function getInputSeconds() {
+      const m = parseInt(inputMin.value) || 0;
+      const s = parseInt(inputSec.value) || 0;
+      return m * 60 + s;
+    }
+
+    function format(secs) {
+      const m = Math.floor(secs / 60).toString().padStart(2, '0');
+      const s = (secs % 60).toString().padStart(2, '0');
+      return `${m}:${s}`;
+    }
+
+    function updateDisplay() {
+      display.textContent = format(remaining);
+    }
+
+    function setStatus(text) {
+      status.textContent = text;
+    }
+
+    function start() {
+      if (remaining <= 0) return;
+      running = true;
+      display.classList.add('running');
+      display.classList.remove('finished');
+      setStatus('実行中… スペースキーで一時停止');
+      interval = setInterval(() => {
+        remaining--;
+        updateDisplay();
+        if (remaining <= 0) {
+          finish();
+        }
+      }, 1000);
+    }
+
+    function stop() {
+      running = false;
+      clearInterval(interval);
+      interval = null;
+      display.classList.remove('running');
+      setStatus('一時停止中 — スペースキーで再開 / Enterでリセット');
+    }
+
+    function finish() {
+      stop();
+      display.classList.add('finished');
+      setStatus('時間になりました！ Enterでリセット');
+      playFinishSound();
+    }
+
+    function reset() {
+      clearInterval(interval);
+      interval = null;
+      running  = false;
+      display.classList.remove('running', 'finished');
+
+      total     = getInputSeconds();
+      remaining = total;
+
+      if (total <= 0) {
+        updateDisplay();
+        setStatus('時間を設定してください');
+        return;
+      }
+
+      updateDisplay();
+      start();
+    }
+
+    updateDisplay();
+
+    document.addEventListener('keydown', (e) => {
+      if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName) &&
+          e.key !== ' ' && e.key !== 'Enter') return;
+
+      if (e.key === ' ') {
+        e.preventDefault();
+        audioCtx.resume();
+        if (running) {
+          stop();
+        } else {
+          if (remaining > 0) start();
+          else setStatus('Enterでリセットしてください');
+        }
+      }
+
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        audioCtx.resume();
+        reset();
+      }
+    });
+
+    inputMin.addEventListener('change', () => {
+      if (!running) { remaining = getInputSeconds(); updateDisplay(); setActivePreset(-1); }
+    });
+    inputSec.addEventListener('change', () => {
+      if (!running) { remaining = getInputSeconds(); updateDisplay(); setActivePreset(-1); }
+    });
+
+    presetBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        audioCtx.resume();
+        const sec = parseInt(btn.dataset.sec);
+        inputMin.value = Math.floor(sec / 60);
+        inputSec.value = sec % 60;
+        clearInterval(interval);
+        interval  = null;
+        running   = false;
+        display.classList.remove('running', 'finished');
+        total     = sec;
+        remaining = sec;
+        updateDisplay();
+        setActivePreset(sec);
+        start();
+      });
+    });
+  </script>
+</body>
+</html>
