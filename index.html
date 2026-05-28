@@ -188,6 +188,54 @@
     .preset-btn:active { transform: scale(0.95); }
     .preset-btn.active { border-color: #4a7aff; color: #4a7aff; }
 
+    /* ── 積算時間 ── */
+    .accum-box {
+      background: #0d1b33;
+      border: 1px solid #1e2e4a;
+      border-radius: 12px;
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      max-width: 420px;
+      width: 100%;
+    }
+
+    .accum-label {
+      font-size: 0.75rem;
+      color: #5a7aaa;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      white-space: nowrap;
+    }
+
+    .accum-time {
+      font-size: 1.9rem;
+      font-weight: 200;
+      font-variant-numeric: tabular-nums;
+      color: #a0b4d8;
+      letter-spacing: 0.04em;
+      flex: 1;
+    }
+
+    .accum-time.running { color: #7fff9a; }
+
+    .btn-accum-reset {
+      border: 1px solid #2a3a5a;
+      background: transparent;
+      color: #4a6a9a;
+      font-size: 0.8rem;
+      padding: 6px 14px;
+      border-radius: 7px;
+      cursor: pointer;
+      white-space: nowrap;
+      min-height: 36px;
+      transition: color 0.15s, border-color 0.15s;
+    }
+
+    .btn-accum-reset:hover  { color: #7a9acf; border-color: #4a6aaa; }
+    .btn-accum-reset:active { transform: scale(0.95); }
+
     /* ── ステータス ── */
     .status {
       font-size: 0.9rem;
@@ -284,6 +332,13 @@
     <button class="preset-btn" data-sec="1800">30分</button>
   </div>
 
+  <!-- 積算時間 -->
+  <div class="accum-box">
+    <span class="accum-label">積算時間</span>
+    <span class="accum-time" id="accumDisplay">0:00:00</span>
+    <button class="btn-accum-reset" id="btnAccumReset">クリア</button>
+  </div>
+
   <div class="status" id="status">タップまたはスペースキーでスタート</div>
 
   <!-- 説明書き -->
@@ -307,6 +362,10 @@
     // ストップウォッチ用（ms）
     let swMs        = 0;
     let swStartTime = 0;   // Date.now() のスナップショット
+
+    // 積算時間（ms）
+    let accumMs       = 0;   // 保存済み積算
+    let accumRunStart = 0;   // 現在の計測開始時刻
 
     /* ===== Audio ==================================================== */
     let audioCtx = null;
@@ -344,7 +403,32 @@
     const presetBtns = document.querySelectorAll('.preset-btn');
     const tabTimer   = document.getElementById('tabTimer');
     const tabSW      = document.getElementById('tabSW');
-    const instrList  = document.getElementById('instrList');
+    const instrList     = document.getElementById('instrList');
+    const accumDisplay  = document.getElementById('accumDisplay');
+    const btnAccumReset = document.getElementById('btnAccumReset');
+
+    /* ===== 積算時間 ================================================= */
+    function formatAccum(ms) {
+      const s  = Math.floor(ms / 1000);
+      const h  = Math.floor(s / 3600);
+      const m  = Math.floor((s % 3600) / 60).toString().padStart(2, '0');
+      const ss = (s % 60).toString().padStart(2, '0');
+      return `${h}:${m}:${ss}`;
+    }
+
+    function updateAccumDisplay() {
+      const live = accumMs + (running ? Date.now() - accumRunStart : 0);
+      accumDisplay.textContent = formatAccum(live);
+      accumDisplay.classList.toggle('running', running);
+    }
+
+    function resetAccum() {
+      accumMs = 0;
+      accumRunStart = running ? Date.now() : 0;
+      updateAccumDisplay();
+    }
+
+    btnAccumReset.addEventListener('click', resetAccum);
 
     /* ===== フォーマット ============================================= */
     function formatSec(s) {
@@ -388,10 +472,12 @@
         ['↺ / Enter',      '指定した時間にリセットして再スタート'],
         ['プリセット',     'よく使う時間を即スタート'],
         ['分 / 秒',        '入力欄で時間を自由に設定'],
+        ['積算クリア',     '積算時間だけを 0 に戻す（メインタイマーは継続）'],
       ],
       stopwatch: [
         ['タップ / Space', 'スタート・ストップ（数字部分のタップも可）'],
         ['↺ / Enter',      '00:00 にリセット'],
+        ['積算クリア',     '積算時間だけを 0 に戻す（計測は継続）'],
       ],
     };
 
@@ -405,6 +491,7 @@
     function timerStart() {
       if (remaining <= 0) return;
       running = true;
+      accumRunStart = Date.now();
       display.classList.add('running');
       display.classList.remove('finished');
       setStatus('実行中… タップで一時停止');
@@ -412,16 +499,19 @@
       interval = setInterval(() => {
         remaining--;
         updateDisplay();
+        updateAccumDisplay();
         if (remaining <= 0) timerFinish();
       }, 1000);
     }
 
     function timerStop() {
+      accumMs += Date.now() - accumRunStart;
       running = false;
       clearInterval(interval); interval = null;
       display.classList.remove('running');
       setStatus('一時停止中 — タップで再開 / ↺ でリセット');
       updateStartBtn();
+      updateAccumDisplay();
     }
 
     function timerFinish() {
@@ -444,6 +534,7 @@
     /* ===== ストップウォッチ ========================================= */
     function swStart() {
       running = true;
+      accumRunStart = Date.now();
       swStartTime = Date.now() - swMs;
       display.classList.add('running');
       msDisplay.classList.add('running');
@@ -452,16 +543,19 @@
       interval = setInterval(() => {
         swMs = Date.now() - swStartTime;
         updateDisplay();
+        updateAccumDisplay();
       }, 30);
     }
 
     function swStop() {
+      accumMs += Date.now() - accumRunStart;
       running = false;
       clearInterval(interval); interval = null;
       display.classList.remove('running');
       msDisplay.classList.remove('running');
       setStatus('一時停止中 — タップで再開 / ↺ でリセット');
       updateStartBtn();
+      updateAccumDisplay();
     }
 
     function swReset() {
@@ -560,6 +654,7 @@
     /* ===== 初期化 =================================================== */
     updateDisplay();
     updateStartBtn();
+    updateAccumDisplay();
     updateInstructions();
   </script>
 </body>
