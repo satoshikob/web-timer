@@ -356,8 +356,9 @@
     let interval  = null;
 
     // タイマー用
-    let remaining = 10;
-    let total     = 10;
+    let remaining    = 10;
+    let total        = 10;
+    let timerDeadline = 0;  // タイマー終了予定の Date.now() 値
 
     // ストップウォッチ用（ms）
     let swMs        = 0;
@@ -492,16 +493,18 @@
       if (remaining <= 0) return;
       running = true;
       accumRunStart = Date.now();
+      timerDeadline = Date.now() + remaining * 1000;  // 終了時刻を記録
       display.classList.add('running');
       display.classList.remove('finished');
       setStatus('実行中… タップで一時停止');
       updateStartBtn();
       interval = setInterval(() => {
-        remaining--;
+        // Date.now() で正確な残り時間を計算（スリープ復帰後もズレない）
+        remaining = Math.max(0, Math.ceil((timerDeadline - Date.now()) / 1000));
         updateDisplay();
         updateAccumDisplay();
         if (remaining <= 0) timerFinish();
-      }, 1000);
+      }, 200);  // 細かく回して復帰時のラグを最小化
     }
 
     function timerStop() {
@@ -649,6 +652,23 @@
         updateDisplay(); setActivePreset(sec);
         timerStart();
       });
+    });
+
+    /* ===== スリープ復帰の検知（Page Visibility API） ================ */
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState !== 'visible' || !running) return;
+
+      if (mode === 'timer') {
+        // 復帰時に残り時間を再計算
+        remaining = Math.max(0, Math.ceil((timerDeadline - Date.now()) / 1000));
+        updateDisplay();
+        if (remaining <= 0) timerFinish();
+      } else {
+        // ストップウォッチは Date.now() ベースなので自動的に正確
+        swMs = Date.now() - swStartTime;
+        updateDisplay();
+      }
+      updateAccumDisplay();
     });
 
     /* ===== 初期化 =================================================== */
