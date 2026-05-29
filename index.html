@@ -525,6 +525,7 @@
     }
 
     function timerReset() {
+      if (running) accumMs += Date.now() - accumRunStart;  // 実行中の積算を保存
       clearInterval(interval); interval = null; running = false;
       display.classList.remove('running', 'finished');
       total = (parseInt(inputMin.value) || 0) * 60 + (parseInt(inputSec.value) || 0);
@@ -562,6 +563,7 @@
     }
 
     function swReset() {
+      if (running) accumMs += Date.now() - accumRunStart;  // 実行中の積算を保存
       clearInterval(interval); interval = null; running = false;
       swMs = 0;
       display.classList.remove('running');
