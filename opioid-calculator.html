@@ -333,10 +333,6 @@
   <div class="warn-banner">
     <strong>⚠️ 使用上の注意</strong>
     本ツールは医療従事者の補助を目的とした参考情報です。換算値はあくまで目安であり、実際の投与量は患者の状態・腎機能・副作用等を考慮の上、医師の判断で決定してください。
-    <ul>
-      <li>経口モルヒネ換算120mg以上の場合には、原則として一度に変更せず、30〜50%ずつ段階的に置き換える。<sup>（文献3）</sup></li>
-      <li>オピオイドスイッチング時は不完全交差耐性を考慮した減量が推奨される。</li>
-    </ul>
   </div>
 
   <!-- Step 1 -->
@@ -408,10 +404,6 @@
       <div class="unit-hint" id="to-unit-hint">mg/日</div>
     </div>
 
-    <div class="reduction-row">
-      <input type="checkbox" id="cross-tolerance" checked>
-      <label for="cross-tolerance">不完全交差耐性を考慮して25%減量する（オピオイドスイッチング推奨）</label>
-    </div>
   </div>
 
   <button class="btn-calc" onclick="calculate()">換算量を計算する</button>
@@ -426,22 +418,27 @@
         <span class="ome-label">経口モルヒネ換算量（OME）</span>
         <span class="ome-value" id="res-ome">—</span>
         <span class="ome-unit">mg/日</span>
-        <div class="ome-warn" id="ome-warn">
-          ⚠️ OME 120mg以上のため、原則として30〜50%ずつ段階的に置き換えることを推奨します。（文献3）
-        </div>
+      </div>
+
+      <div class="ome-warn" id="ome-warn" style="display:none">
+        ⚠️ <strong>OME 120mg以上：</strong>原則として一度に変更せず、30〜50%ずつ段階的に置き換えることを推奨します。（文献3・298p）
       </div>
 
       <div class="result-row">
         <span class="result-label">換算用量（等鎮痛量）</span>
         <span class="result-value" id="res-equi">—</span>
       </div>
-      <div class="result-row" id="res-reduction-row" style="display:none">
-        <span class="result-label">25%減量後（推奨開始量）</span>
+      <div class="result-row">
+        <span class="result-label">20〜30%減量した場合<br><small id="res-reduced-note" style="font-weight:400;color:var(--muted);"></small></span>
         <span class="result-value" id="res-reduced">—</span>
       </div>
       <div class="result-row">
-        <span class="result-label" id="res-rescue-label">レスキュー量（1回）</span>
+        <span class="result-label" id="res-rescue-label">レスキュー量（1回・換算用量の1/6）</span>
         <span class="result-value" id="res-rescue">—</span>
+      </div>
+
+      <div class="reduction-note" style="display:block; margin-top:10px;">
+        ⚕️ <strong>不完全交差耐性・生体利用率について：</strong>オピオイドスイッチング時は不完全交差耐性や生体利用率の違いにより、等鎮痛換算量から20〜30%の減量が推奨されます。特に<strong>内服から注射に変更する際</strong>には十分考慮してください。（文献3・303p）
       </div>
 
       <div class="inj-card" id="inj-section" style="display:none">
@@ -557,7 +554,11 @@
       <div class="ref-content">
         <div class="ref-title">緩和ケア オンライン ポータル</div>
         <a class="ref-link" href="https://sites.google.com/view/p-c-onlineportal/%E3%83%9B%E3%83%BC%E3%83%A0?authuser=0" target="_blank" rel="noopener">
-          sites.google.com/view/p-c-onlineportal
+          ホーム
+        </a>
+
+        <a class="ref-link" href="https://drive.google.com/file/d/1IO_DCfzBMPzjB3Lz449iDLH7XC64Qby7/view" target="_blank" rel="noopener">
+          オピオイドのページ
         </a>
       </div>
     </div>
@@ -576,9 +577,6 @@
       <div class="ref-num">3</div>
       <div class="ref-content">
         <div class="ref-title">緩和ケアポケットマニュアル 第3版</div>
-        <a class="ref-link" href="https://drive.google.com/file/d/1IO_DCfzBMPzjB3Lz449iDLH7XC64Qby7/view" target="_blank" rel="noopener">
-          資料を開く（Google Drive）
-        </a>
       </div>
     </div>
 
@@ -633,7 +631,6 @@ function calculate() {
   const fromKey = document.getElementById('from-drug').value;
   const toKey   = document.getElementById('to-drug').value;
   const dose    = parseFloat(document.getElementById('from-dose').value);
-  const doCrossReduce = document.getElementById('cross-tolerance').checked;
 
   if (isNaN(dose) || dose <= 0) {
     alert('1日量を入力してください');
@@ -643,32 +640,27 @@ function calculate() {
   const fromDrug = DRUGS[fromKey];
   const toDrug   = DRUGS[toKey];
 
-  const ome     = fromDrug.toOME(dose);
-  const equi    = toDrug.fromOME(ome);
-  const reduced = equi * 0.75;
-  const workDose = doCrossReduce ? reduced : equi;
-  const rescueDose = workDose / 6;
+  const ome  = fromDrug.toOME(dose);
+  const equi = toDrug.fromOME(ome);
+  const r20  = equi * 0.80;
+  const r30  = equi * 0.70;
+  const rescueDose = equi / 6;
 
   document.getElementById('res-ome').textContent = fmt(ome);
-
-  // OME ≥ 120mg warning
-  const omeWarn = document.getElementById('ome-warn');
-  omeWarn.style.display = ome >= 120 ? 'block' : 'none';
+  document.getElementById('ome-warn').style.display = ome >= 120 ? 'block' : 'none';
 
   document.getElementById('res-equi').innerHTML =
     `${fmt(equi)} <span class="unit">${toDrug.unit}</span>`;
 
-  const reductionRow = document.getElementById('res-reduction-row');
-  if (doCrossReduce) {
-    reductionRow.style.display = 'flex';
-    document.getElementById('res-reduced').innerHTML =
-      `${fmt(reduced)} <span class="unit">${toDrug.unit}</span>`;
-  } else {
-    reductionRow.style.display = 'none';
-  }
+  document.getElementById('res-reduced').innerHTML =
+    `${fmt(r30)}〜${fmt(r20)} <span class="unit">${toDrug.unit}</span>`;
+
+  const isOralToInj = !fromDrug.isInj && toDrug.isInj;
+  document.getElementById('res-reduced-note').textContent =
+    isOralToInj ? '内服→注射の変更のため特に考慮推奨' : '不完全交差耐性・生体利用率を考慮';
 
   document.getElementById('res-rescue-label').textContent =
-    `レスキュー量（1日量の1/6、${toDrug.isInj ? '持続注射中の早送り' : '頓用'}）`;
+    `レスキュー量（1回・${toDrug.isInj ? '持続注射の早送り' : '頓用'}）`;
   document.getElementById('res-rescue').innerHTML =
     `${fmt(rescueDose)} <span class="unit">${toDrug.unit}</span>`;
 
@@ -676,20 +668,16 @@ function calculate() {
   if (toDrug.isInj) {
     injSection.style.display = 'block';
     const amp = toDrug.ampule;
-
-    let dailyLabel, ampLabel;
-    let drugVolNum;
+    let dailyLabel, ampLabel, drugVolNum;
 
     if (amp.isMcg) {
-      const mcgPerDay = workDose;
-      dailyLabel = `${fmt(mcgPerDay)} μg/日（${fmt(mcgPerDay/1000, 3)} mg/日）`;
-      const amps = mcgPerDay / amp.mcgPerAmp;
+      dailyLabel = `${fmt(equi)} μg/日（${fmt(equi/1000, 3)} mg/日）`;
+      const amps = equi / amp.mcgPerAmp;
       ampLabel = `${fmt(amps, 1)} A（${amp.label}）`;
       drugVolNum = amps * amp.vol;
     } else {
-      const mgPerDay = workDose;
-      dailyLabel = `${fmt(mgPerDay)} mg/日`;
-      const amps = mgPerDay / amp.mg;
+      dailyLabel = `${fmt(equi)} mg/日`;
+      const amps = equi / amp.mg;
       ampLabel = `${fmt(amps, 1)} A（${amp.label}）`;
       drugVolNum = amps * amp.vol;
     }
@@ -705,8 +693,6 @@ function calculate() {
   } else {
     injSection.style.display = 'none';
   }
-
-  document.getElementById('reduction-note').style.display = doCrossReduce ? 'block' : 'none';
 
   document.getElementById('result').style.display = 'block';
   document.getElementById('result').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
