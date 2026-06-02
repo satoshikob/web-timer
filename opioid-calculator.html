@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>オピオイド換算計算ツール</title>
+<style>
+  :root {
+    --primary: #1a5276;
+    --primary-light: #2980b9;
+    --accent: #16a085;
+    --warn: #e67e22;
+    --danger: #c0392b;
+    --bg: #f4f6f9;
+    --card: #ffffff;
+    --border: #d5dbdb;
+    --text: #2c3e50;
+    --muted: #7f8c8d;
+    --shadow: 0 2px 8px rgba(0,0,0,0.10);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Hiragino Sans', 'Meiryo', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 0 0 40px;
+  }
+  header {
+    background: var(--primary);
+    color: white;
+    padding: 18px 24px 14px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.18);
+  }
+  header h1 { font-size: 1.25rem; font-weight: 700; letter-spacing: 0.02em; }
+  header p { font-size: 0.78rem; opacity: 0.8; margin-top: 3px; }
+
+  .container { max-width: 720px; margin: 0 auto; padding: 20px 16px 0; }
+
+  .warn-banner {
+    background: #fef9e7;
+    border-left: 4px solid var(--warn);
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin-bottom: 20px;
+    font-size: 0.82rem;
+    color: #7d6608;
+    line-height: 1.6;
+  }
+  .warn-banner strong { display: block; margin-bottom: 4px; color: #b7770d; }
+
+  .card {
+    background: var(--card);
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    padding: 20px 20px 18px;
+    margin-bottom: 16px;
+  }
+  .card h2 {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: 14px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--primary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card h2 .step-badge {
+    background: var(--primary);
+    color: white;
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.8rem; font-weight: 700; flex-shrink: 0;
+  }
+
+  label { display: block; font-size: 0.83rem; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+
+  select, input[type="number"] {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1.5px solid var(--border);
+    border-radius: 7px;
+    font-size: 0.92rem;
+    color: var(--text);
+    background: white;
+    transition: border-color 0.2s;
+    -webkit-appearance: none;
+  }
+  select:focus, input[type="number"]:focus {
+    outline: none;
+    border-color: var(--primary-light);
+    box-shadow: 0 0 0 3px rgba(41,128,185,0.12);
+  }
+
+  .form-row { margin-bottom: 14px; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+  .unit-hint {
+    font-size: 0.76rem;
+    color: var(--muted);
+    margin-top: 5px;
+  }
+
+  .reduction-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: #eaf4fb;
+    border-radius: 7px;
+    margin-top: 4px;
+  }
+  .reduction-row input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; accent-color: var(--primary); }
+  .reduction-row label { margin: 0; font-size: 0.83rem; cursor: pointer; font-weight: 500; }
+
+  .btn-calc {
+    width: 100%;
+    padding: 13px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 0.04em;
+    transition: background 0.2s, transform 0.1s;
+    margin-top: 4px;
+  }
+  .btn-calc:hover { background: #148f77; }
+  .btn-calc:active { transform: scale(0.98); }
+
+  /* Result */
+  #result { display: none; }
+  .result-card {
+    background: var(--card);
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    padding: 20px;
+    margin-bottom: 16px;
+    border-top: 4px solid var(--accent);
+  }
+  .result-card h2 {
+    font-size: 0.95rem; font-weight: 700; color: var(--accent);
+    margin-bottom: 14px;
+  }
+
+  .ome-box {
+    background: #eafaf1;
+    border: 1.5px solid #a9dfbf;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 14px;
+    display: flex; align-items: baseline; gap: 8px;
+  }
+  .ome-label { font-size: 0.8rem; color: #1e8449; font-weight: 600; }
+  .ome-value { font-size: 1.5rem; font-weight: 700; color: #1e8449; }
+  .ome-unit { font-size: 0.82rem; color: #1e8449; }
+
+  .result-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 9px 0;
+    border-bottom: 1px solid #f0f0f0;
+    gap: 12px;
+  }
+  .result-row:last-child { border-bottom: none; }
+  .result-label { font-size: 0.84rem; color: var(--muted); flex: 1; }
+  .result-value { font-size: 1.05rem; font-weight: 700; color: var(--text); text-align: right; }
+  .result-value .unit { font-size: 0.8rem; font-weight: 500; color: var(--muted); margin-left: 3px; }
+
+  .inj-card {
+    background: #fef9f0;
+    border: 1.5px solid #f0c080;
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-top: 12px;
+  }
+  .inj-card h3 {
+    font-size: 0.85rem; font-weight: 700; color: var(--warn);
+    margin-bottom: 10px; display: flex; align-items: center; gap: 6px;
+  }
+  .inj-table { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
+  .inj-table td { padding: 6px 8px; }
+  .inj-table tr:nth-child(even) td { background: rgba(240,192,128,0.1); border-radius: 4px; }
+  .inj-table .td-label { color: var(--muted); font-weight: 500; width: 48%; }
+  .inj-table .td-val { font-weight: 700; color: var(--text); }
+
+  .reduction-note {
+    background: #fdf2f8;
+    border-left: 3px solid #af7ac5;
+    border-radius: 5px;
+    padding: 8px 12px;
+    font-size: 0.79rem;
+    color: #7d3c98;
+    margin-top: 10px;
+    line-height: 1.6;
+  }
+
+  .step-arrow {
+    text-align: center;
+    color: var(--muted);
+    font-size: 1.2rem;
+    margin: -6px 0 -6px;
+    opacity: 0.5;
+  }
+
+  /* Links */
+  .links-card {
+    background: var(--card);
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    padding: 18px 20px;
+    margin-bottom: 16px;
+  }
+  .links-card h2 {
+    font-size: 0.92rem; font-weight: 700; color: var(--primary);
+    margin-bottom: 12px; padding-bottom: 8px;
+    border-bottom: 2px solid var(--primary);
+  }
+  .link-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: 7px;
+    text-decoration: none;
+    color: var(--primary);
+    font-size: 0.87rem;
+    font-weight: 600;
+    border: 1.5px solid var(--border);
+    margin-bottom: 8px;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .link-item:last-child { margin-bottom: 0; }
+  .link-item:hover { background: #eaf4fb; border-color: var(--primary-light); }
+  .link-icon { font-size: 1.1rem; flex-shrink: 0; }
+
+  .ref-note {
+    font-size: 0.76rem; color: var(--muted);
+    text-align: center; margin-top: 10px; line-height: 1.6;
+  }
+
+  @media (max-width: 480px) {
+    .form-grid { grid-template-columns: 1fr; }
+    header h1 { font-size: 1.1rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>💊 オピオイド換算計算ツール</h1>
+  <p>経口モルヒネ換算量(OME)を基準とした投与量自動算出</p>
+</header>
+
+<div class="container">
+
+  <div class="warn-banner">
+    <strong>⚠️ 使用上の注意</strong>
+    本ツールは医療従事者の補助を目的とした参考情報です。換算値はあくまで目安であり、実際の投与量は患者の状態・腎機能・副作用等を考慮の上、医師の判断で決定してください。オピオイドスイッチング時は不完全交差耐性を考慮した減量が推奨されます。
+  </div>
+
+  <!-- Step 1 -->
+  <div class="card">
+    <h2><span class="step-badge">1</span>現在使用中のオピオイド</h2>
+    <div class="form-grid">
+      <div class="form-row">
+        <label for="from-drug">薬剤の種類</label>
+        <select id="from-drug" onchange="updateFromUnit()">
+          <optgroup label="経口剤">
+            <option value="morphine-oral">モルヒネ（経口）</option>
+            <option value="oxycodone-oral">オキシコドン（経口）</option>
+            <option value="hydromorphone-oral">ヒドロモルフォン（経口）</option>
+            <option value="codeine-oral">コデイン（経口）</option>
+            <option value="tramadol-oral">トラマドール（経口）</option>
+            <option value="tapentadol-oral">タペンタドール（経口）</option>
+          </optgroup>
+          <optgroup label="貼付剤">
+            <option value="fentanyl-patch">フェンタニル（貼付）</option>
+          </optgroup>
+          <optgroup label="注射剤">
+            <option value="morphine-inj">モルヒネ（注射）</option>
+            <option value="oxycodone-inj">オキシコドン（注射）</option>
+            <option value="hydromorphone-inj">ヒドロモルフォン（注射）</option>
+            <option value="fentanyl-inj">フェンタニル（注射）</option>
+          </optgroup>
+        </select>
+      </div>
+      <div class="form-row">
+        <label for="from-dose">1日量</label>
+        <input type="number" id="from-dose" min="0" step="0.1" placeholder="0">
+        <div class="unit-hint" id="from-unit-hint">mg/日</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="step-arrow">▼</div>
+
+  <!-- Step 2 -->
+  <div class="card">
+    <h2><span class="step-badge">2</span>変更後のオピオイド</h2>
+    <div class="form-row">
+      <label for="to-drug">薬剤の種類</label>
+      <select id="to-drug" onchange="updateToUnit()">
+        <optgroup label="経口剤">
+          <option value="morphine-oral">モルヒネ（経口）</option>
+          <option value="oxycodone-oral">オキシコドン（経口）</option>
+          <option value="hydromorphone-oral">ヒドロモルフォン（経口）</option>
+          <option value="codeine-oral">コデイン（経口）</option>
+          <option value="tramadol-oral">トラマドール（経口）</option>
+          <option value="tapentadol-oral">タペンタドール（経口）</option>
+        </optgroup>
+        <optgroup label="貼付剤">
+          <option value="fentanyl-patch">フェンタニル（貼付）</option>
+        </optgroup>
+        <optgroup label="注射剤">
+          <option value="morphine-inj">モルヒネ（注射）</option>
+          <option value="oxycodone-inj">オキシコドン（注射）</option>
+          <option value="hydromorphone-inj">ヒドロモルフォン（注射）</option>
+          <option value="fentanyl-inj">フェンタニル（注射）</option>
+        </optgroup>
+      </select>
+      <div class="unit-hint" id="to-unit-hint">mg/日</div>
+    </div>
+
+    <div class="reduction-row">
+      <input type="checkbox" id="cross-tolerance" checked>
+      <label for="cross-tolerance">不完全交差耐性を考慮して25%減量する（オピオイドスイッチング推奨）</label>
+    </div>
+  </div>
+
+  <button class="btn-calc" onclick="calculate()">換算量を計算する</button>
+
+  <!-- Result -->
+  <div id="result">
+    <div class="step-arrow" style="margin-top:16px;">▼</div>
+    <div class="result-card">
+      <h2>🔄 換算結果</h2>
+
+      <div class="ome-box">
+        <span class="ome-label">経口モルヒネ換算量（OME）</span>
+        <span class="ome-value" id="res-ome">—</span>
+        <span class="ome-unit">mg/日</span>
+      </div>
+
+      <div class="result-row">
+        <span class="result-label">換算用量（等鎮痛量）</span>
+        <span class="result-value" id="res-equi">—</span>
+      </div>
+      <div class="result-row" id="res-reduction-row" style="display:none">
+        <span class="result-label">25%減量後（推奨開始量）</span>
+        <span class="result-value" id="res-reduced">—</span>
+      </div>
+      <div class="result-row">
+        <span class="result-label" id="res-rescue-label">レスキュー量（1回）</span>
+        <span class="result-value" id="res-rescue">—</span>
+      </div>
+
+      <div class="inj-card" id="inj-section" style="display:none">
+        <h3>💉 注射剤の調製方法（持続投与）</h3>
+        <table class="inj-table">
+          <tr>
+            <td class="td-label">薬剤</td>
+            <td class="td-val" id="inj-drug-name">—</td>
+          </tr>
+          <tr>
+            <td class="td-label">1日必要量</td>
+            <td class="td-val" id="inj-daily">—</td>
+          </tr>
+          <tr>
+            <td class="td-label">アンプル数（24時間分）</td>
+            <td class="td-val" id="inj-ampule">—</td>
+          </tr>
+          <tr>
+            <td class="td-label">シリンジ内の薬液量</td>
+            <td class="td-val" id="inj-drug-vol">—</td>
+          </tr>
+          <tr>
+            <td class="td-label">生理食塩水で</td>
+            <td class="td-val" id="inj-saline">—</td>
+          </tr>
+          <tr>
+            <td class="td-label">投与速度</td>
+            <td class="td-val" id="inj-rate">2 mL/h（持続皮下/静脈内）</td>
+          </tr>
+        </table>
+        <div style="font-size:0.76rem; color:var(--muted); margin-top:8px; line-height:1.6;">
+          ※ 48mLシリンジポンプ（2mL/h = 24時間）での調製例。実際の希釈量はシリンジサイズや施設のプロトコルに合わせて調整してください。
+        </div>
+      </div>
+
+      <div class="reduction-note" id="reduction-note" style="display:none">
+        ⚕️ <strong>スイッチング時の注意：</strong>不完全交差耐性を考慮し、等鎮痛換算量から25%減量した量を初期投与量としています。その後は疼痛・副作用を評価しながら増減してください。
+      </div>
+    </div>
+  </div>
+
+  <!-- Reference links -->
+  <div class="links-card">
+    <h2>🔗 参考リンク</h2>
+    <a class="link-item" href="https://sites.google.com/view/p-c-onlineportal/%E3%83%9B%E3%83%BC%E3%83%A0?authuser=0" target="_blank" rel="noopener">
+      <span class="link-icon">🏠</span>緩和ケア オンライン ポータル
+    </a>
+    <a class="link-item" href="https://drive.google.com/file/d/1IO_DCfzBMPzjB3Lz449iDLH7XC64Qby7/view" target="_blank" rel="noopener">
+      <span class="link-icon">📄</span>オピオイド（資料）
+    </a>
+  </div>
+
+  <div class="ref-note">
+    換算比の参考：日本緩和医療学会「がん疼痛の薬物療法に関するガイドライン」<br>
+    経口モルヒネ換算比（OME）を基準として算出
+  </div>
+
+</div>
+
+<script>
+const DRUGS = {
+  'morphine-oral':      { label: 'モルヒネ（経口）',         unit: 'mg/日', toOME: v => v,        fromOME: o => o,        isInj: false },
+  'oxycodone-oral':     { label: 'オキシコドン（経口）',      unit: 'mg/日', toOME: v => v * 1.5,  fromOME: o => o / 1.5,  isInj: false },
+  'hydromorphone-oral': { label: 'ヒドロモルフォン（経口）',  unit: 'mg/日', toOME: v => v * 5,    fromOME: o => o / 5,    isInj: false },
+  'codeine-oral':       { label: 'コデイン（経口）',          unit: 'mg/日', toOME: v => v / 6,    fromOME: o => o * 6,    isInj: false },
+  'tramadol-oral':      { label: 'トラマドール（経口）',      unit: 'mg/日', toOME: v => v / 5,    fromOME: o => o * 5,    isInj: false },
+  'tapentadol-oral':    { label: 'タペンタドール（経口）',    unit: 'mg/日', toOME: v => v * 0.4,  fromOME: o => o / 0.4,  isInj: false },
+  'fentanyl-patch':     { label: 'フェンタニル（貼付）',      unit: 'μg/h', toOME: v => v * 2.4,  fromOME: o => o / 2.4,  isInj: false },
+  'morphine-inj':       { label: 'モルヒネ（注射）',          unit: 'mg/日', toOME: v => v * 3,    fromOME: o => o / 3,    isInj: true,
+    ampule: { mg: 10, vol: 1, label: '10mg/1mL', name: 'モルヒネ注射液' } },
+  'oxycodone-inj':      { label: 'オキシコドン（注射）',      unit: 'mg/日', toOME: v => v * 3,    fromOME: o => o / 3,    isInj: true,
+    ampule: { mg: 10, vol: 1, label: '10mg/1mL', name: 'オキファスト注10mg' } },
+  'hydromorphone-inj':  { label: 'ヒドロモルフォン（注射）',  unit: 'mg/日', toOME: v => v * 15,   fromOME: o => o / 15,   isInj: true,
+    ampule: { mg: 2, vol: 1, label: '2mg/1mL', name: 'ナルベイン注2mg' } },
+  'fentanyl-inj':       { label: 'フェンタニル（注射）',      unit: 'μg/日',toOME: v => v * 0.3,  fromOME: o => o / 0.3,  isInj: true,
+    ampule: { mg: 0.1, vol: 2, label: '0.1mg/2mL (50μg/mL)', name: 'フェンタニル注射液', isMcg: true, mcgPerAmp: 100 } },
+};
+
+function updateFromUnit() {
+  const key = document.getElementById('from-drug').value;
+  document.getElementById('from-unit-hint').textContent = DRUGS[key].unit;
+}
+function updateToUnit() {
+  const key = document.getElementById('to-drug').value;
+  document.getElementById('to-unit-hint').textContent = DRUGS[key].unit;
+}
+
+function fmt(n, digits=1) {
+  return Number(n.toFixed(digits)).toString();
+}
+
+function calculate() {
+  const fromKey = document.getElementById('from-drug').value;
+  const toKey   = document.getElementById('to-drug').value;
+  const dose    = parseFloat(document.getElementById('from-dose').value);
+  const doCrossReduce = document.getElementById('cross-tolerance').checked;
+
+  if (isNaN(dose) || dose <= 0) {
+    alert('1日量を入力してください');
+    return;
+  }
+
+  const fromDrug = DRUGS[fromKey];
+  const toDrug   = DRUGS[toKey];
+
+  const ome     = fromDrug.toOME(dose);
+  const equi    = toDrug.fromOME(ome);
+  const reduced = equi * 0.75;
+  const workDose = doCrossReduce ? reduced : equi;
+
+  // Rescue: 1日量の1/6（定時量ベース）
+  const rescueDose = workDose / 6;
+
+  // OME
+  document.getElementById('res-ome').textContent = fmt(ome);
+
+  // Equianalgesic
+  document.getElementById('res-equi').innerHTML =
+    `${fmt(equi)} <span class="unit">${toDrug.unit}</span>`;
+
+  // Reduction
+  const reductionRow = document.getElementById('res-reduction-row');
+  if (doCrossReduce) {
+    reductionRow.style.display = 'flex';
+    document.getElementById('res-reduced').innerHTML =
+      `${fmt(reduced)} <span class="unit">${toDrug.unit}</span>`;
+  } else {
+    reductionRow.style.display = 'none';
+  }
+
+  // Rescue
+  document.getElementById('res-rescue-label').textContent =
+    `レスキュー量（1日量の1/6、${toDrug.isInj ? '持続注射中の早送り' : '頓用'}）`;
+  document.getElementById('res-rescue').innerHTML =
+    `${fmt(rescueDose)} <span class="unit">${toDrug.unit}</span>`;
+
+  // Injection section
+  const injSection = document.getElementById('inj-section');
+  if (toDrug.isInj) {
+    injSection.style.display = 'block';
+    const amp = toDrug.ampule;
+
+    let dailyAmt, dailyLabel, ampCount, ampLabel, drugVol;
+
+    if (amp.isMcg) {
+      // Fentanyl in mcg
+      const mcgPerDay = workDose; // already in mcg
+      dailyLabel = `${fmt(mcgPerDay)} μg/日（${fmt(mcgPerDay/1000, 3)} mg/日）`;
+      const amps = mcgPerDay / amp.mcgPerAmp;
+      ampCount = Math.ceil(amps * 10) / 10;
+      ampLabel = `${fmt(amps, 1)} A （${amp.label}）`;
+      drugVol = fmt(amps * amp.vol, 1) + ' mL';
+    } else {
+      const mgPerDay = workDose;
+      dailyLabel = `${fmt(mgPerDay)} mg/日`;
+      const amps = mgPerDay / amp.mg;
+      ampCount = Math.ceil(amps * 10) / 10;
+      ampLabel = `${fmt(amps, 1)} A （${amp.label}）`;
+      drugVol = fmt(amps * amp.vol, 1) + ' mL';
+    }
+
+    const drugVolNum = amp.isMcg
+      ? (workDose / amp.mcgPerAmp) * amp.vol
+      : (workDose / amp.mg) * amp.vol;
+    const totalVol = 48;
+    const salineVol = Math.max(0, totalVol - drugVolNum);
+
+    document.getElementById('inj-drug-name').textContent = amp.name + '（' + amp.label + '）';
+    document.getElementById('inj-daily').textContent = dailyLabel;
+    document.getElementById('inj-ampule').textContent = ampLabel;
+    document.getElementById('inj-drug-vol').textContent = fmt(drugVolNum, 1) + ' mL';
+    document.getElementById('inj-saline').textContent = `${fmt(salineVol, 1)} mL を加えて計 ${totalVol} mL に調製`;
+  } else {
+    injSection.style.display = 'none';
+  }
+
+  // Reduction note
+  const reductionNote = document.getElementById('reduction-note');
+  reductionNote.style.display = doCrossReduce ? 'block' : 'none';
+
+  document.getElementById('result').style.display = 'block';
+  document.getElementById('result').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// Init
+updateFromUnit();
+updateToUnit();
+</script>
+</body>
+</html>
