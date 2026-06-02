@@ -680,6 +680,7 @@ function calculate() {
   if (toDrug.isInj) {
     injSection.style.display = 'block';
     const amp = toDrug.ampule;
+    equi = Math.round(equi);
 
     // Round up to whole ampules
     const ampsNeeded = amp.isMcg ? equi / amp.mcgPerAmp : equi / amp.mg;
