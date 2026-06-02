@@ -682,8 +682,12 @@ function calculate() {
     const amp = toDrug.ampule;
     equi = Math.round(equi);
 
-    // Round up to whole ampules
-    const ampsNeeded = amp.isMcg ? equi / amp.mcgPerAmp : equi / amp.mg;
+    // Total drug needed = 24h continuous + 10 rescue doses (1 rescue = equi/6)
+    const rescueMg = equi / 6;
+    const totalDrugNeeded = amp.isMcg
+      ? equi + 10 * rescueMg
+      : equi + 10 * rescueMg;
+    const ampsNeeded = amp.isMcg ? totalDrugNeeded / amp.mcgPerAmp : totalDrugNeeded / amp.mg;
     const ampsUsed = Math.ceil(ampsNeeded);
     const drugVolNum = ampsUsed * amp.vol;
 
@@ -691,14 +695,19 @@ function calculate() {
     const totalDrugMg = ampsUsed * amp.mg;
     const totalDrugMcg = amp.isMcg ? ampsUsed * amp.mcgPerAmp : null;
 
-    // Round rate UP to nearest 0.5 mL/h, then back-calculate total volume
-    const minRatePerH = drugVolNum / 24;
-    const ratePerH = Math.ceil(minRatePerH * 2) / 2 || 0.5; // minimum 0.5 mL/h
-    const totalVol = ratePerH * 24;
+    // Pick smallest round total volume >= drugVolNum
+    const roundVols = [50, 60, 80, 100, 120];
+    const totalVol = roundVols.find(v => v >= drugVolNum) ?? Math.ceil(drugVolNum / 10) * 10;
     const salineVol = totalVol - drugVolNum;
 
-    // Concentration
+    // Rate to deliver continuous equi mg/day at syringe concentration
+    // conc = totalDrugMg / totalVol; rate = equi / conc / 24
     const concMg = totalDrugMg / totalVol;
+    const rawRatePerH = (equi / concMg) / 24;
+    const ratePerH = Math.max(0.5, Math.round(rawRatePerH * 2) / 2); // nearest 0.5
+
+    // Duration the syringe will last
+    const durationH = totalVol / ratePerH;
 
     let dailyLabel, ampLabel, drugVolLabel, concLabel;
     if (amp.isMcg) {
@@ -719,7 +728,7 @@ function calculate() {
     document.getElementById('inj-drug-vol').textContent  = drugVolLabel;
     document.getElementById('inj-saline').textContent    = `計 ${totalVol} mL になるよう生食 ${fmt(salineVol,1)} mL を加える`;
     document.getElementById('inj-conc').textContent      = concLabel;
-    document.getElementById('inj-rate').textContent      = `${fmt(ratePerH,2)} mL/h（${totalVol} mL ÷ 24時間、持続皮下/静脈内）`;
+    document.getElementById('inj-rate').textContent      = `${fmt(ratePerH,1)} mL/h（持続皮下/静脈内）→ 約${fmt(durationH,0)}時間分`;
   } else {
     injSection.style.display = 'none';
   }
