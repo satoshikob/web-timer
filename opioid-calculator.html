@@ -449,28 +449,32 @@
             <td class="td-val" id="inj-drug-name">—</td>
           </tr>
           <tr>
-            <td class="td-label">1日必要量</td>
+            <td class="td-label">1日必要量（換算値）</td>
             <td class="td-val" id="inj-daily">—</td>
           </tr>
           <tr>
-            <td class="td-label">アンプル数（24時間分）</td>
+            <td class="td-label">アンプル数（端数切り上げ）</td>
             <td class="td-val" id="inj-ampule">—</td>
           </tr>
           <tr>
-            <td class="td-label">シリンジ内の薬液量</td>
+            <td class="td-label">薬液量（全量使用）</td>
             <td class="td-val" id="inj-drug-vol">—</td>
           </tr>
           <tr>
-            <td class="td-label">生理食塩水で</td>
+            <td class="td-label">生理食塩水を加えて</td>
             <td class="td-val" id="inj-saline">—</td>
           </tr>
           <tr>
+            <td class="td-label">希釈後濃度</td>
+            <td class="td-val" id="inj-conc">—</td>
+          </tr>
+          <tr>
             <td class="td-label">投与速度</td>
-            <td class="td-val" id="inj-rate">2 mL/h（持続皮下/静脈内）</td>
+            <td class="td-val" id="inj-rate">—</td>
           </tr>
         </table>
         <div style="font-size:0.76rem; color:var(--muted); margin-top:8px; line-height:1.6;">
-          ※ 48mLシリンジポンプ（2mL/h = 24時間）での調製例。実際の希釈量はシリンジサイズや施設のプロトコルに合わせて調整してください。
+          ※ 120mLシリンジェクター使用を想定。アンプルは端数が出た場合も全量使用し、キリのよい総量に希釈します。実際の投与量・速度は施設のプロトコルに従って決定してください。
         </div>
       </div>
 
@@ -676,28 +680,45 @@ function calculate() {
   if (toDrug.isInj) {
     injSection.style.display = 'block';
     const amp = toDrug.ampule;
-    let dailyLabel, ampLabel, drugVolNum;
 
+    // Round up to whole ampules
+    const ampsNeeded = amp.isMcg ? equi / amp.mcgPerAmp : equi / amp.mg;
+    const ampsUsed = Math.ceil(ampsNeeded);
+    const drugVolNum = ampsUsed * amp.vol;
+
+    // Total drug amount (whole ampules)
+    const totalDrugMg = ampsUsed * amp.mg;
+    const totalDrugMcg = amp.isMcg ? ampsUsed * amp.mcgPerAmp : null;
+
+    // Pick smallest round total volume >= drugVolNum: 50,60,80,100,120
+    const roundVols = [50, 60, 80, 100, 120];
+    const totalVol = roundVols.find(v => v >= drugVolNum) ?? 120;
+    const salineVol = totalVol - drugVolNum;
+
+    // Concentration and rate
+    const concMg = totalDrugMg / totalVol;
+    const ratePerH = totalVol / 24;
+
+    let dailyLabel, ampLabel, drugVolLabel, concLabel;
     if (amp.isMcg) {
-      dailyLabel = `${fmt(equi)} μg/日（${fmt(equi/1000, 3)} mg/日）`;
-      const amps = equi / amp.mcgPerAmp;
-      ampLabel = `${fmt(amps, 1)} A（${amp.label}）`;
-      drugVolNum = amps * amp.vol;
+      dailyLabel = `${fmt(equi)} μg/日（${fmt(equi/1000,3)} mg/日）`;
+      ampLabel   = `${ampsUsed} A（${amp.label}）`;
+      drugVolLabel = `${fmt(drugVolNum,1)} mL（${totalDrugMcg} μg = ${fmt(totalDrugMg,2)} mg）`;
+      concLabel  = `${fmt(totalDrugMcg/totalVol,1)} μg/mL（${fmt(concMg*1000,2)} μg/mL）`;
     } else {
-      dailyLabel = `${fmt(equi)} mg/日`;
-      const amps = equi / amp.mg;
-      ampLabel = `${fmt(amps, 1)} A（${amp.label}）`;
-      drugVolNum = amps * amp.vol;
+      dailyLabel   = `${fmt(equi)} mg/日`;
+      ampLabel     = `${ampsUsed} A（${amp.label}）`;
+      drugVolLabel = `${fmt(drugVolNum,1)} mL（${fmt(totalDrugMg,1)} mg）`;
+      concLabel    = `${fmt(concMg,2)} mg/mL`;
     }
 
-    const totalVol = 48;
-    const salineVol = Math.max(0, totalVol - drugVolNum);
-
     document.getElementById('inj-drug-name').textContent = amp.name + '（' + amp.label + '）';
-    document.getElementById('inj-daily').textContent = dailyLabel;
-    document.getElementById('inj-ampule').textContent = ampLabel;
-    document.getElementById('inj-drug-vol').textContent = fmt(drugVolNum, 1) + ' mL';
-    document.getElementById('inj-saline').textContent = `${fmt(salineVol, 1)} mL を加えて計 ${totalVol} mL に調製`;
+    document.getElementById('inj-daily').textContent     = dailyLabel;
+    document.getElementById('inj-ampule').textContent    = ampLabel;
+    document.getElementById('inj-drug-vol').textContent  = drugVolLabel;
+    document.getElementById('inj-saline').textContent    = `計 ${totalVol} mL になるよう生食 ${fmt(salineVol,1)} mL を加える`;
+    document.getElementById('inj-conc').textContent      = concLabel;
+    document.getElementById('inj-rate').textContent      = `${fmt(ratePerH,2)} mL/h（${totalVol} mL ÷ 24時間、持続皮下/静脈内）`;
   } else {
     injSection.style.display = 'none';
   }
