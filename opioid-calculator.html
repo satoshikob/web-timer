@@ -690,14 +690,14 @@ function calculate() {
     const totalDrugMg = ampsUsed * amp.mg;
     const totalDrugMcg = amp.isMcg ? ampsUsed * amp.mcgPerAmp : null;
 
-    // Pick smallest round total volume >= drugVolNum: 50,60,80,100,120
-    const roundVols = [50, 60, 80, 100, 120];
-    const totalVol = roundVols.find(v => v >= drugVolNum) ?? 120;
+    // Round rate UP to nearest 0.5 mL/h, then back-calculate total volume
+    const minRatePerH = drugVolNum / 24;
+    const ratePerH = Math.ceil(minRatePerH * 2) / 2 || 0.5; // minimum 0.5 mL/h
+    const totalVol = ratePerH * 24;
     const salineVol = totalVol - drugVolNum;
 
-    // Concentration and rate
+    // Concentration
     const concMg = totalDrugMg / totalVol;
-    const ratePerH = totalVol / 24;
 
     let dailyLabel, ampLabel, drugVolLabel, concLabel;
     if (amp.isMcg) {
