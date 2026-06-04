@@ -16,13 +16,50 @@
       background: #1a1a2e;
       color: #eee;
       font-family: 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px 16px;
+    }
+
+    /* ═══════════════════════════════════════
+       2カラム レイアウト
+       PC : 横並び  /  モバイル : 縦積み
+    ════════════════════════════════════════ */
+    .layout {
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      gap: clamp(14px, 2.8vw, 28px);
-      padding: 24px 16px;
+      gap: 20px;
+      width: 100%;
+      max-width: 860px;
+    }
+
+    @media (min-width: 720px) {
+      .layout {
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        gap: 40px;
+      }
+    }
+
+    .panel-left {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      flex: 0 0 auto;
+    }
+
+    .panel-right {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      flex: 1 1 300px;
+      max-width: 360px;
+      width: 100%;
     }
 
     /* ── モード切り替えタブ ── */
@@ -41,11 +78,11 @@
       color: #5a7aaa;
       font-size: 0.95rem;
       font-weight: 600;
-      padding: 10px 28px;
+      padding: 9px 24px;
       border-radius: 9px;
       cursor: pointer;
       transition: background 0.2s, color 0.2s;
-      min-height: 44px;
+      min-height: 42px;
     }
 
     .mode-tab.active {
@@ -55,7 +92,7 @@
 
     /* ── タイマー数字 ── */
     .timer-display {
-      font-size: clamp(5rem, 20vw, 9rem);
+      font-size: clamp(4.5rem, 18vw, 8rem);
       font-weight: 200;
       letter-spacing: 0.05em;
       font-variant-numeric: tabular-nums;
@@ -65,6 +102,7 @@
       cursor: pointer;
       user-select: none;
       -webkit-user-select: none;
+      line-height: 1;
     }
 
     .timer-display:active { transform: scale(0.96); }
@@ -85,14 +123,14 @@
       to   { opacity: 0.5; }
     }
 
-    /* ── ストップウォッチ用 ミリ秒サフィックス ── */
+    /* ── ストップウォッチ ミリ秒 ── */
     .ms-display {
-      font-size: clamp(2rem, 7vw, 3.5rem);
+      font-size: clamp(1.6rem, 6vw, 2.8rem);
       font-weight: 200;
       font-variant-numeric: tabular-nums;
       color: #6a7a9a;
       transition: color 0.3s;
-      margin-top: -8px;
+      margin-top: -6px;
       user-select: none;
     }
 
@@ -101,7 +139,7 @@
     /* ── コントロールボタン ── */
     .controls {
       display: flex;
-      gap: 12px;
+      gap: 10px;
     }
 
     .btn {
@@ -109,9 +147,9 @@
       border-radius: 12px;
       font-size: 1rem;
       font-weight: 600;
-      padding: 14px 32px;
-      min-width: 130px;
-      min-height: 52px;
+      padding: 13px 28px;
+      min-width: 120px;
+      min-height: 50px;
       cursor: pointer;
       transition: filter 0.15s, transform 0.1s;
       user-select: none;
@@ -120,17 +158,16 @@
 
     .btn:active { transform: scale(0.95); filter: brightness(0.85); }
 
-    .btn-start         { background: #2a6aff; color: #fff; }
+    .btn-start            { background: #2a6aff; color: #fff; }
     .btn-start.is-running { background: #1a8a4a; }
-    .btn-reset         { background: #1e2e4a; color: #7a9acf; border: 1px solid #2a3a5a; }
+    .btn-reset            { background: #1e2e4a; color: #7a9acf; border: 1px solid #2a3a5a; }
 
-    /* ── 入力欄（タイマーモードのみ） ── */
-    .timer-only { transition: opacity 0.2s; }
+    /* ── 入力欄（タイマーのみ） ── */
     .timer-only.hidden { display: none; }
 
     .input-row {
       display: flex;
-      gap: 12px;
+      gap: 10px;
       align-items: center;
     }
 
@@ -142,16 +179,16 @@
     }
 
     .input-group label {
-      font-size: 0.75rem;
+      font-size: 0.72rem;
       color: #7888a8;
       text-transform: uppercase;
       letter-spacing: 0.1em;
     }
 
     .input-group input {
-      width: 80px;
-      padding: 8px 12px;
-      font-size: 1.6rem;
+      width: 76px;
+      padding: 7px 10px;
+      font-size: 1.5rem;
       text-align: center;
       background: #0d1b33;
       border: 1px solid #2a3a5a;
@@ -163,12 +200,12 @@
 
     .input-group input:focus { border-color: #4a7aff; }
 
-    .input-sep { font-size: 2rem; color: #4a5a7a; padding-top: 16px; }
+    .input-sep { font-size: 1.8rem; color: #4a5a7a; padding-top: 14px; }
 
     /* ── プリセット ── */
     .presets {
       display: flex;
-      gap: 10px;
+      gap: 8px;
       flex-wrap: wrap;
       justify-content: center;
     }
@@ -178,9 +215,9 @@
       border: 1px solid #2a3a5a;
       border-radius: 8px;
       color: #7a9acf;
-      font-size: 0.95rem;
-      padding: 10px 20px;
-      min-height: 44px;
+      font-size: 0.9rem;
+      padding: 8px 16px;
+      min-height: 40px;
       cursor: pointer;
       transition: background 0.15s, border-color 0.15s, color 0.15s;
     }
@@ -193,16 +230,14 @@
       background: #0d1b33;
       border: 1px solid #1e2e4a;
       border-radius: 12px;
-      padding: 14px 24px;
+      padding: 14px 20px;
       display: flex;
       align-items: center;
-      gap: 16px;
-      max-width: 420px;
-      width: 100%;
+      gap: 14px;
     }
 
     .accum-label {
-      font-size: 0.75rem;
+      font-size: 0.72rem;
       color: #5a7aaa;
       text-transform: uppercase;
       letter-spacing: 0.1em;
@@ -210,7 +245,7 @@
     }
 
     .accum-time {
-      font-size: 1.9rem;
+      font-size: 1.8rem;
       font-weight: 200;
       font-variant-numeric: tabular-nums;
       color: #a0b4d8;
@@ -225,11 +260,11 @@
       background: transparent;
       color: #4a6a9a;
       font-size: 0.8rem;
-      padding: 6px 14px;
+      padding: 6px 12px;
       border-radius: 7px;
       cursor: pointer;
       white-space: nowrap;
-      min-height: 36px;
+      min-height: 34px;
       transition: color 0.15s, border-color 0.15s;
     }
 
@@ -238,7 +273,7 @@
 
     /* ── ステータス ── */
     .status {
-      font-size: 0.9rem;
+      font-size: 0.88rem;
       color: #5a6a8a;
       min-height: 1.2em;
       text-align: center;
@@ -249,28 +284,26 @@
       background: #0d1b33;
       border: 1px solid #1e2e4a;
       border-radius: 12px;
-      padding: 20px 24px;
-      max-width: 420px;
-      width: 100%;
+      padding: 16px 20px;
     }
 
     .instructions h2 {
-      font-size: 0.75rem;
+      font-size: 0.72rem;
       color: #5a7aaa;
       text-transform: uppercase;
       letter-spacing: 0.12em;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
     }
 
     .instructions ul {
       list-style: none;
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 7px;
     }
 
     .instructions li {
-      font-size: 0.85rem;
+      font-size: 0.83rem;
       color: #8898b8;
       display: flex;
       gap: 10px;
@@ -282,8 +315,8 @@
       background: #1a2a4a;
       border: 1px solid #2e4a70;
       border-radius: 5px;
-      padding: 1px 8px;
-      font-size: 0.78rem;
+      padding: 1px 7px;
+      font-size: 0.75rem;
       font-family: monospace;
       color: #aac0e0;
       white-space: nowrap;
@@ -292,81 +325,83 @@
   </style>
 </head>
 <body>
+<div class="layout">
 
-  <!-- モード切り替え -->
-  <div class="mode-tabs">
-    <button class="mode-tab active" id="tabTimer">タイマー</button>
-    <button class="mode-tab"        id="tabSW">ストップウォッチ</button>
-  </div>
+  <!-- 左パネル：タイマー操作 -->
+  <div class="panel-left">
 
-  <!-- 数字表示 -->
-  <div class="timer-display" id="display">00:00</div>
-  <div class="ms-display hidden" id="msDisplay">.00</div>
+    <div class="mode-tabs">
+      <button class="mode-tab active" id="tabTimer">タイマー</button>
+      <button class="mode-tab"        id="tabSW">ストップウォッチ</button>
+    </div>
 
-  <!-- コントロール -->
-  <div class="controls">
-    <button class="btn btn-start" id="btnStart">▶ スタート</button>
-    <button class="btn btn-reset" id="btnReset">↺ リセット</button>
-  </div>
+    <div class="timer-display" id="display">00:00</div>
+    <div class="ms-display hidden" id="msDisplay">.00</div>
 
-  <!-- タイマーのみ表示 -->
-  <div class="timer-only" id="timerOnly">
-    <div class="input-row">
-      <div class="input-group">
-        <label>分</label>
-        <input type="number" id="inputMin" min="0" max="99" value="0" placeholder="0">
-      </div>
-      <span class="input-sep">:</span>
-      <div class="input-group">
-        <label>秒</label>
-        <input type="number" id="inputSec" min="0" max="59" value="10" placeholder="0">
+    <div class="controls">
+      <button class="btn btn-start" id="btnStart">▶ スタート</button>
+      <button class="btn btn-reset" id="btnReset">↺ リセット</button>
+    </div>
+
+    <div class="timer-only" id="timerOnly">
+      <div class="input-row">
+        <div class="input-group">
+          <label>分</label>
+          <input type="number" id="inputMin" min="0" max="99" value="0">
+        </div>
+        <span class="input-sep">:</span>
+        <div class="input-group">
+          <label>秒</label>
+          <input type="number" id="inputSec" min="0" max="59" value="10">
+        </div>
       </div>
     </div>
-  </div>
 
-  <div class="timer-only presets" id="presetsRow">
-    <button class="preset-btn" data-sec="15">15秒</button>
-    <button class="preset-btn" data-sec="30">30秒</button>
-    <button class="preset-btn" data-sec="40">40秒</button>
-    <button class="preset-btn" data-sec="60">1分</button>
-    <button class="preset-btn" data-sec="1800">30分</button>
-  </div>
+    <div class="timer-only presets" id="presetsRow">
+      <button class="preset-btn" data-sec="15">15秒</button>
+      <button class="preset-btn" data-sec="30">30秒</button>
+      <button class="preset-btn" data-sec="40">40秒</button>
+      <button class="preset-btn" data-sec="60">1分</button>
+      <button class="preset-btn" data-sec="1800">30分</button>
+    </div>
 
-  <!-- 積算時間 -->
-  <div class="accum-box">
-    <span class="accum-label">積算時間</span>
-    <span class="accum-time" id="accumDisplay">0:00:00</span>
-    <button class="btn-accum-reset" id="btnAccumReset">クリア</button>
-  </div>
+  </div><!-- /panel-left -->
 
-  <div class="status" id="status">タップまたはスペースキーでスタート</div>
+  <!-- 右パネル：積算・ステータス・説明 -->
+  <div class="panel-right">
 
-  <!-- 説明書き -->
-  <div class="instructions" id="instructions">
-    <h2>操作方法</h2>
-    <ul id="instrList">
-      <!-- JS で動的に書き換え -->
-    </ul>
-  </div>
+    <div class="accum-box">
+      <span class="accum-label">積算時間</span>
+      <span class="accum-time" id="accumDisplay">0:00:00</span>
+      <button class="btn-accum-reset" id="btnAccumReset">クリア</button>
+    </div>
+
+    <div class="status" id="status">タップまたはスペースキーでスタート</div>
+
+    <div class="instructions">
+      <h2>操作方法</h2>
+      <ul id="instrList"></ul>
+    </div>
+
+  </div><!-- /panel-right -->
+
+</div><!-- /layout -->
 
   <script>
     /* ===== 状態 ===================================================== */
-    let mode      = 'timer';   // 'timer' | 'stopwatch'
+    let mode      = 'timer';
     let running   = false;
     let interval  = null;
 
-    // タイマー用
     let remaining    = 10;
     let total        = 10;
-    let timerDeadline = 0;  // タイマー終了予定の Date.now() 値
+    let timerDeadline = 0;
 
-    // ストップウォッチ用（ms）
     let swMs        = 0;
-    let swStartTime = 0;   // Date.now() のスナップショット
+    let swStartTime = 0;
 
-    // 積算時間（ms）
-    let accumMs       = 0;   // 保存済み積算
-    let accumRunStart = 0;   // 現在の計測開始時刻
+    let accumMs       = 0;
+    let accumRunStart = 0;
 
     /* ===== Audio ==================================================== */
     let audioCtx = null;
@@ -392,44 +427,21 @@
     }
 
     /* ===== DOM refs ================================================= */
-    const display    = document.getElementById('display');
-    const msDisplay  = document.getElementById('msDisplay');
-    const statusEl   = document.getElementById('status');
-    const btnStart   = document.getElementById('btnStart');
-    const btnReset   = document.getElementById('btnReset');
-    const inputMin   = document.getElementById('inputMin');
-    const inputSec   = document.getElementById('inputSec');
-    const timerOnly  = document.getElementById('timerOnly');
-    const presetsRow = document.getElementById('presetsRow');
-    const presetBtns = document.querySelectorAll('.preset-btn');
-    const tabTimer   = document.getElementById('tabTimer');
-    const tabSW      = document.getElementById('tabSW');
+    const display       = document.getElementById('display');
+    const msDisplay     = document.getElementById('msDisplay');
+    const statusEl      = document.getElementById('status');
+    const btnStart      = document.getElementById('btnStart');
+    const btnReset      = document.getElementById('btnReset');
+    const inputMin      = document.getElementById('inputMin');
+    const inputSec      = document.getElementById('inputSec');
+    const timerOnly     = document.getElementById('timerOnly');
+    const presetsRow    = document.getElementById('presetsRow');
+    const presetBtns    = document.querySelectorAll('.preset-btn');
+    const tabTimer      = document.getElementById('tabTimer');
+    const tabSW         = document.getElementById('tabSW');
     const instrList     = document.getElementById('instrList');
     const accumDisplay  = document.getElementById('accumDisplay');
     const btnAccumReset = document.getElementById('btnAccumReset');
-
-    /* ===== 積算時間 ================================================= */
-    function formatAccum(ms) {
-      const s  = Math.floor(ms / 1000);
-      const h  = Math.floor(s / 3600);
-      const m  = Math.floor((s % 3600) / 60).toString().padStart(2, '0');
-      const ss = (s % 60).toString().padStart(2, '0');
-      return `${h}:${m}:${ss}`;
-    }
-
-    function updateAccumDisplay() {
-      const live = accumMs + (running ? Date.now() - accumRunStart : 0);
-      accumDisplay.textContent = formatAccum(live);
-      accumDisplay.classList.toggle('running', running);
-    }
-
-    function resetAccum() {
-      accumMs = 0;
-      accumRunStart = running ? Date.now() : 0;
-      updateAccumDisplay();
-    }
-
-    btnAccumReset.addEventListener('click', resetAccum);
 
     /* ===== フォーマット ============================================= */
     function formatSec(s) {
@@ -437,11 +449,18 @@
       return `${m}:${(s % 60).toString().padStart(2, '0')}`;
     }
     function formatMs(ms) {
-      const total_s = Math.floor(ms / 1000);
-      const m  = Math.floor(total_s / 60).toString().padStart(2, '0');
-      const s  = (total_s % 60).toString().padStart(2, '0');
+      const ts = Math.floor(ms / 1000);
+      const m  = Math.floor(ts / 60).toString().padStart(2, '0');
+      const s  = (ts % 60).toString().padStart(2, '0');
       const cs = Math.floor((ms % 1000) / 10).toString().padStart(2, '0');
       return { main: `${m}:${s}`, sub: `.${cs}` };
+    }
+    function formatAccum(ms) {
+      const s = Math.floor(ms / 1000);
+      const h = Math.floor(s / 3600);
+      const m = Math.floor((s % 3600) / 60).toString().padStart(2, '0');
+      const ss = (s % 60).toString().padStart(2, '0');
+      return `${h}:${m}:${ss}`;
     }
 
     /* ===== 表示更新 ================================================= */
@@ -454,14 +473,16 @@
         msDisplay.textContent = f.sub;
       }
     }
-
+    function updateAccumDisplay() {
+      const live = accumMs + (running ? Date.now() - accumRunStart : 0);
+      accumDisplay.textContent = formatAccum(live);
+      accumDisplay.classList.toggle('running', running);
+    }
     function updateStartBtn() {
       btnStart.textContent = running ? '⏸ ストップ' : '▶ スタート';
       btnStart.classList.toggle('is-running', running);
     }
-
     function setStatus(text) { statusEl.textContent = text; }
-
     function setActivePreset(sec) {
       presetBtns.forEach(b => b.classList.toggle('active', parseInt(b.dataset.sec) === sec));
     }
@@ -469,19 +490,18 @@
     /* ===== 説明書き ================================================= */
     const INSTR = {
       timer: [
-        ['タップ / Space', 'スタート・ストップ（数字部分のタップも可）'],
-        ['↺ / Enter',      '指定した時間にリセットして再スタート'],
+        ['タップ / Space', 'スタート・ストップ（数字部分も可）'],
+        ['↺ / Enter',      '指定時間にリセットして再スタート'],
         ['プリセット',     'よく使う時間を即スタート'],
-        ['分 / 秒',        '入力欄で時間を自由に設定'],
-        ['積算クリア',     '積算時間だけを 0 に戻す（メインタイマーは継続）'],
+        ['分 / 秒',        '入力欄で時間を設定'],
+        ['積算クリア',     '積算時間のみ 0 に戻す'],
       ],
       stopwatch: [
-        ['タップ / Space', 'スタート・ストップ（数字部分のタップも可）'],
+        ['タップ / Space', 'スタート・ストップ（数字部分も可）'],
         ['↺ / Enter',      '00:00 にリセット'],
-        ['積算クリア',     '積算時間だけを 0 に戻す（計測は継続）'],
+        ['積算クリア',     '積算時間のみ 0 に戻す'],
       ],
     };
-
     function updateInstructions() {
       instrList.innerHTML = INSTR[mode]
         .map(([k, v]) => `<li><span class="key">${k}</span>${v}</li>`)
@@ -493,20 +513,18 @@
       if (remaining <= 0) return;
       running = true;
       accumRunStart = Date.now();
-      timerDeadline = Date.now() + remaining * 1000;  // 終了時刻を記録
+      timerDeadline = Date.now() + remaining * 1000;
       display.classList.add('running');
       display.classList.remove('finished');
       setStatus('実行中… タップで一時停止');
       updateStartBtn();
       interval = setInterval(() => {
-        // Date.now() で正確な残り時間を計算（スリープ復帰後もズレない）
         remaining = Math.max(0, Math.ceil((timerDeadline - Date.now()) / 1000));
         updateDisplay();
         updateAccumDisplay();
         if (remaining <= 0) timerFinish();
-      }, 200);  // 細かく回して復帰時のラグを最小化
+      }, 200);
     }
-
     function timerStop() {
       accumMs += Date.now() - accumRunStart;
       running = false;
@@ -516,16 +534,14 @@
       updateStartBtn();
       updateAccumDisplay();
     }
-
     function timerFinish() {
       timerStop();
       display.classList.add('finished');
       setStatus('時間になりました！ ↺ でリセット');
       playFinishSound();
     }
-
     function timerReset() {
-      if (running) accumMs += Date.now() - accumRunStart;  // 実行中の積算を保存
+      if (running) accumMs += Date.now() - accumRunStart;
       clearInterval(interval); interval = null; running = false;
       display.classList.remove('running', 'finished');
       total = (parseInt(inputMin.value) || 0) * 60 + (parseInt(inputSec.value) || 0);
@@ -550,7 +566,6 @@
         updateAccumDisplay();
       }, 30);
     }
-
     function swStop() {
       accumMs += Date.now() - accumRunStart;
       running = false;
@@ -561,9 +576,8 @@
       updateStartBtn();
       updateAccumDisplay();
     }
-
     function swReset() {
-      if (running) accumMs += Date.now() - accumRunStart;  // 実行中の積算を保存
+      if (running) accumMs += Date.now() - accumRunStart;
       clearInterval(interval); interval = null; running = false;
       swMs = 0;
       display.classList.remove('running');
@@ -573,7 +587,7 @@
       setStatus('タップまたはスペースキーでスタート');
     }
 
-    /* ===== 共通 toggle / reset ====================================== */
+    /* ===== 共通 ===================================================== */
     function toggleStartStop() {
       resumeAudio();
       if (mode === 'timer') {
@@ -582,7 +596,6 @@
         running ? swStop() : swStart();
       }
     }
-
     function doReset() {
       resumeAudio();
       mode === 'timer' ? timerReset() : swReset();
@@ -591,42 +604,54 @@
     /* ===== モード切り替え =========================================== */
     function switchMode(newMode) {
       if (newMode === mode) return;
-      // 現在動いていれば止める
       clearInterval(interval); interval = null; running = false;
-
       mode = newMode;
       const isTimer = mode === 'timer';
-
       tabTimer.classList.toggle('active', isTimer);
       tabSW.classList.toggle('active', !isTimer);
-
       timerOnly.classList.toggle('hidden', !isTimer);
       presetsRow.classList.toggle('hidden', !isTimer);
       msDisplay.classList.toggle('hidden', isTimer);
-
       display.classList.remove('running', 'finished');
       msDisplay.classList.remove('running');
-
       if (isTimer) {
         remaining = (parseInt(inputMin.value) || 0) * 60 + (parseInt(inputSec.value) || 0);
         if (!remaining) remaining = total;
       } else {
         swMs = 0;
       }
-
       updateDisplay();
       updateStartBtn();
+      updateAccumDisplay();
       updateInstructions();
       setStatus('タップまたはスペースキーでスタート');
     }
 
+    /* ===== スリープ復帰 ============================================= */
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState !== 'visible' || !running) return;
+      if (mode === 'timer') {
+        remaining = Math.max(0, Math.ceil((timerDeadline - Date.now()) / 1000));
+        updateDisplay();
+        if (remaining <= 0) timerFinish();
+      } else {
+        swMs = Date.now() - swStartTime;
+        updateDisplay();
+      }
+      updateAccumDisplay();
+    });
+
     /* ===== イベント ================================================= */
     tabTimer.addEventListener('click', () => switchMode('timer'));
     tabSW.addEventListener('click',    () => switchMode('stopwatch'));
-
     btnStart.addEventListener('click', toggleStartStop);
     btnReset.addEventListener('click', doReset);
     display.addEventListener('click',  toggleStartStop);
+    btnAccumReset.addEventListener('click', () => {
+      accumMs = 0;
+      accumRunStart = running ? Date.now() : 0;
+      updateAccumDisplay();
+    });
 
     document.addEventListener('keydown', e => {
       if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName) &&
@@ -648,29 +673,13 @@
         const sec = parseInt(btn.dataset.sec);
         inputMin.value = Math.floor(sec / 60);
         inputSec.value = sec % 60;
+        if (running) accumMs += Date.now() - accumRunStart;
         clearInterval(interval); interval = null; running = false;
         display.classList.remove('running', 'finished');
         total = sec; remaining = sec;
         updateDisplay(); setActivePreset(sec);
         timerStart();
       });
-    });
-
-    /* ===== スリープ復帰の検知（Page Visibility API） ================ */
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState !== 'visible' || !running) return;
-
-      if (mode === 'timer') {
-        // 復帰時に残り時間を再計算
-        remaining = Math.max(0, Math.ceil((timerDeadline - Date.now()) / 1000));
-        updateDisplay();
-        if (remaining <= 0) timerFinish();
-      } else {
-        // ストップウォッチは Date.now() ベースなので自動的に正確
-        swMs = Date.now() - swStartTime;
-        updateDisplay();
-      }
-      updateAccumDisplay();
     });
 
     /* ===== 初期化 =================================================== */
