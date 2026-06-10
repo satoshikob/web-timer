@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>海外渡航ワクチンスケジューラー</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
+      background: #f0f4f8;
+      color: #333;
+      min-height: 100vh;
+    }
+
+    .app-header {
+      background: linear-gradient(135deg, #1a6b3a, #0d4a28);
+      color: white;
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+    }
+    .app-header h1 { font-size: 1.2rem; flex: 1; }
+
+    .app-body {
+      display: flex;
+      height: calc(100vh - 52px);
+      overflow: hidden;
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: 250px;
+      flex-shrink: 0;
+      background: white;
+      border-right: 1px solid #dce3ea;
+      display: flex;
+      flex-direction: column;
+    }
+    .sidebar-top {
+      padding: 12px;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .btn-add {
+      background: #1a6b3a;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 9px;
+      font-size: 0.88rem;
+      cursor: pointer;
+      width: 100%;
+    }
+    .btn-add:hover { background: #0d4a28; }
+    .search-box {
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 0.84rem;
+      width: 100%;
+      outline: none;
+    }
+    .search-box:focus { border-color: #1a6b3a; }
+    .patient-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .patient-card {
+      border-radius: 8px;
+      padding: 10px 12px;
+      cursor: pointer;
+      border: 1px solid #e8edf2;
+      background: #fafcfd;
+    }
+    .patient-card:hover { background: #eef8f2; border-color: #8ec9a7; }
+    .patient-card.selected { background: #d8f0e3; border-color: #1a6b3a; }
+    .pc-name { font-weight: 600; font-size: 0.9rem; }
+    .pc-meta { font-size: 0.75rem; color: #666; margin-top: 2px; }
+    .pc-progress { margin-top: 4px; font-size: 0.72rem; color: #1a6b3a; font-weight: 600; }
+    .empty-list { text-align: center; color: #aaa; font-size: 0.84rem; padding: 24px 8px; }
+
+    /* ── Main ── */
+    .main-panel {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .patient-header-card {
+      background: white;
+      border-radius: 10px;
+      padding: 16px 20px;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.08);
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .ph-name { font-size: 1.15rem; font-weight: 700; margin-bottom: 4px; }
+    .ph-meta { font-size: 0.84rem; color: #555; display: flex; gap: 12px; flex-wrap: wrap; }
+    .ph-actions { display: flex; gap: 8px; flex-shrink: 0; }
+
+    .section-card {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.08);
+      overflow: hidden;
+    }
+    .section-header {
+      padding: 14px 20px 10px;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .section-header h2 { font-size: 1rem; color: #1a6b3a; }
+
+    /* ── Vaccine selector ── */
+    .vaccine-selector {
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .date-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .date-row label { font-size: 0.85rem; color: #555; white-space: nowrap; }
+    .date-row input[type="date"] {
+      border: 1px solid #ccc;
+      border-radius: 7px;
+      padding: 7px 10px;
+      font-size: 0.9rem;
+      outline: none;
+    }
+    .date-row input:focus { border-color: #1a6b3a; }
+
+    .vaccine-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+      gap: 8px;
+    }
+    .vax-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 8px 10px;
+      border: 1px solid #e0e8f0;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.1s, border-color 0.1s;
+      background: white;
+    }
+    .vax-item:hover { background: #eef8f2; border-color: #8ec9a7; }
+    .vax-item.selected { background: #d8f0e3; border-color: #1a6b3a; }
+    .vax-item input[type="checkbox"] { width: 16px; height: 16px; flex-shrink: 0; margin-top: 2px; cursor: pointer; }
+    .vax-item-text {}
+    .vax-item-name { font-size: 0.88rem; font-weight: 600; }
+    .vax-item-detail { font-size: 0.72rem; color: #666; margin-top: 1px; }
+    .vax-category {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #1a6b3a;
+      background: #eef8f2;
+      padding: 5px 10px;
+      border-radius: 6px;
+      margin-top: 4px;
+      letter-spacing: 0.03em;
+    }
+
+    .btn-generate {
+      background: #1a6b3a;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 24px;
+      font-size: 0.92rem;
+      cursor: pointer;
+      align-self: flex-start;
+    }
+    .btn-generate:hover { background: #0d4a28; }
+
+    /* ── Schedule table ── */
+    .schedule-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.84rem;
+    }
+    .schedule-table th {
+      background: #1a6b3a;
+      color: white;
+      padding: 10px 12px;
+      text-align: left;
+      font-weight: 600;
+    }
+    .schedule-table td {
+      padding: 9px 12px;
+      border-bottom: 1px solid #eef;
+      vertical-align: middle;
+    }
+    .schedule-table tr:last-child td { border-bottom: none; }
+    .schedule-table tr:hover td { background: #f5faf7; }
+    .date-group-header td {
+      background: #f0f7f3 !important;
+      font-weight: 700;
+      font-size: 0.82rem;
+      color: #1a6b3a;
+      padding: 6px 12px;
+      border-top: 2px solid #c5e0cf;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 0.71rem;
+      font-weight: bold;
+      white-space: nowrap;
+    }
+    .badge-required  { background: #fde8e8; color: #c0392b; }
+    .badge-optional  { background: #fff3cd; color: #856404; }
+    .badge-mandatory { background: #d4edda; color: #155724; }
+
+    .done-check {
+      width: 18px; height: 18px; cursor: pointer;
+    }
+    .row-done td { opacity: 0.5; text-decoration: line-through; }
+
+    .empty-main {
+      text-align: center;
+      color: #aaa;
+      padding: 60px 20px;
+      font-size: 0.95rem;
+    }
+
+    /* ── Modal ── */
+    .modal-bg {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+    .modal-card {
+      background: white;
+      border-radius: 12px;
+      padding: 28px 32px;
+      max-width: 480px;
+      width: 90%;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .modal-card h3 { font-size: 1.05rem; margin-bottom: 18px; color: #0d4a28; }
+    .form-group { margin-bottom: 14px; }
+    .form-group label { display: block; font-size: 0.85rem; color: #555; margin-bottom: 4px; }
+    .form-group input[type="text"],
+    .form-group input[type="date"],
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      border: 1px solid #ccc;
+      border-radius: 7px;
+      padding: 8px 10px;
+      font-size: 0.9rem;
+      outline: none;
+      font-family: inherit;
+    }
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus { border-color: #1a6b3a; }
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .btn-cancel {
+      background: #f0f4f8; color: #555; border: 1px solid #ccc;
+      border-radius: 7px; padding: 8px 18px; font-size: 0.88rem; cursor: pointer;
+    }
+    .btn-cancel:hover { background: #e4e9ef; }
+    .btn-primary {
+      background: #1a6b3a; color: white; border: none;
+      border-radius: 7px; padding: 8px 20px; font-size: 0.88rem; cursor: pointer;
+    }
+    .btn-primary:hover { background: #0d4a28; }
+    .btn-danger {
+      background: #c0392b; color: white; border: none;
+      border-radius: 7px; padding: 8px 18px; font-size: 0.88rem; cursor: pointer;
+    }
+    .btn-danger:hover { background: #922b21; }
+    .btn-sm {
+      background: #f0f4f8; color: #1a6b3a; border: 1px solid #a5d6b7;
+      border-radius: 6px; padding: 5px 12px; font-size: 0.8rem; cursor: pointer;
+    }
+    .btn-sm:hover { background: #daf0e4; }
+    .btn-sm-danger {
+      background: #fff0f0; color: #c0392b; border: 1px solid #f5c6c6;
+      border-radius: 6px; padding: 5px 10px; font-size: 0.8rem; cursor: pointer;
+    }
+    .btn-sm-danger:hover { background: #ffe0e0; }
+
+    .print-hint {
+      font-size: 0.78rem;
+      color: #888;
+      margin-left: 8px;
+    }
+
+    @media print {
+      .app-header, .sidebar, .ph-actions, .btn-generate,
+      .vaccine-selector, .modal-bg, .schedule-card-header .btn-sm { display: none !important; }
+      .app-body { height: auto; }
+      .main-panel { padding: 0; }
+      .schedule-table td, .schedule-table th { font-size: 0.8rem; }
+    }
+
+    @media (max-width: 700px) {
+      .app-body { flex-direction: column; height: auto; }
+      .sidebar { width: 100%; height: auto; border-right: none; border-bottom: 1px solid #dce3ea; }
+      .patient-list { flex-direction: row; overflow-x: auto; overflow-y: hidden; flex-wrap: nowrap; padding: 8px; }
+      .patient-card { min-width: 140px; flex-shrink: 0; }
+      .vaccine-grid { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ===== Add/Edit Patient Modal ===== -->
+<div id="patient-modal" class="modal-bg" style="display:none">
+  <div class="modal-card">
+    <h3 id="modal-title">✈️ 患者を登録</h3>
+    <div class="form-group">
+      <label>患者ID（任意）</label>
+      <input type="text" id="modal-id" placeholder="例：TV001" maxlength="30">
+    </div>
+    <div class="form-group">
+      <label>イニシャル / 氏名 *</label>
+      <input type="text" id="modal-initial" placeholder="例：T.T. または 田中 太郎" maxlength="50">
+    </div>
+    <div class="form-group">
+      <label>渡航先（任意）</label>
+      <input type="text" id="modal-dest" placeholder="例：東南アジア、インド、アフリカ" maxlength="100">
+    </div>
+    <div class="form-group">
+      <label>渡航予定日（任意）</label>
+      <input type="date" id="modal-travel-date">
+    </div>
+    <div class="form-group">
+      <label>メモ（任意）</label>
+      <textarea id="modal-notes" rows="2" placeholder="アレルギーなど" maxlength="200"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closePatientModal()">キャンセル</button>
+      <button class="btn-primary" onclick="savePatient()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Delete Confirm Modal ===== -->
+<div id="delete-modal" class="modal-bg" style="display:none">
+  <div class="modal-card">
+    <h3>🗑 患者を削除しますか？</h3>
+    <p id="delete-name" style="font-weight:600;margin-bottom:8px"></p>
+    <p style="font-size:0.85rem;color:#666">この操作は取り消せません。</p>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="document.getElementById('delete-modal').style.display='none'">キャンセル</button>
+      <button class="btn-danger" onclick="executeDelete()">削除する</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== App ===== -->
+<header class="app-header">
+  <h1>✈️ 海外渡航ワクチンスケジューラー</h1>
+  <span style="font-size:0.8rem;opacity:0.8">データはこのブラウザにのみ保存</span>
+</header>
+
+<div class="app-body">
+  <aside class="sidebar">
+    <div class="sidebar-top">
+      <button class="btn-add" onclick="openAddModal()">＋ 患者を追加</button>
+      <input type="text" class="search-box" id="search-box" placeholder="ID・名前で検索..." oninput="renderList()">
+    </div>
+    <div class="patient-list" id="patient-list">
+      <div class="empty-list">患者が登録されていません</div>
+    </div>
+  </aside>
+
+  <main class="main-panel" id="main-panel">
+    <div class="empty-main">← 患者を選択するか、新規追加してください</div>
+  </main>
+</div>
+
+<script>
+// =============================================
+// ワクチンデータ（海外渡航向け）
+// =============================================
+const VACCINE_CATEGORIES = [
+  {
+    category: '必須・推奨（渡航先によっては入国条件）',
+    vaccines: [
+      {
+        id: 'yellowfever',
+        name: '黄熱',
+        badge: 'mandatory',
+        badgeLabel: '証明書必須',
+        doses: [
+          { num: 1, label: '①', dayOffset: 0, note: '1回接種。証明書は接種後10日目から有効・生涯有効' }
+        ],
+        note: 'アフリカ・中南米の流行地への渡航・経由で要求される場合あり'
+      },
+      {
+        id: 'hepa',
+        name: 'A型肝炎',
+        badge: 'required',
+        badgeLabel: '強く推奨',
+        doses: [
+          { num: 1, label: '①', dayOffset: 0,   note: '初回' },
+          { num: 2, label: '②', dayOffset: 180,  note: '①から6〜12か月後（長期免疫）' }
+        ],
+        note: '発展途上国全般に推奨。1回でも短期効果あり'
+      },
+      {
+        id: 'hepb',
+        name: 'B型肝炎',
+        badge: 'required',
+        badgeLabel: '強く推奨',
+        doses: [
+          { num: 1, label: '①', dayOffset: 0,  note: '初回' },
+          { num: 2, label: '②', dayOffset: 30, note: '①から1か月後' },
+          { num: 3, label: '③', dayOffset: 180, note: '①から6か月後' }
+        ],
+        altSchedules: [
+          { label: '加速（0・7・21日）', offsets: [0, 7, 21], boosterDays: 365 }
+        ],
+        note: '長期滞在・医療行為・性的接触リスクがある場合に推奨'
+      },
+      {
+        id: 'typhoid',
+        name: '腸チフス',
+        badge: 'required',
+        badgeLabel: '強く推奨',
+        doses: [
+          { num: 1, label: '①', dayOffset: 0, note: '注射剤：1回（3年間有効）' }
+        ],
+        note: '南アジア・東南アジア・アフリカ・中南米への渡航に推奨'
+      },
+    ]
+  },
+  {
+    category: '渡航先・活動に応じて推奨',
+    vaccines: [
+      {
+        id: 'japanese_encephalitis',
+        name: '日本脳炎',
+        badge: 'optional',
+        badgeLabel: '状況により推奨',
+        doses: [
+          { num: 1, label: '①', dayOffset: 0,  note: '初回' },
+          { num: 2, label: '②', dayOffset: 28, note: '①から28日後（基礎免疫完了）' }
+        ],
+        note: 'アジア農村部・田園地帯への長期滞在（4週以上）や屋外活動に推奨'
+      },
+      {
+        id: 'rabies',
+        name: '狂犬病（曝露前予防接種）',
+        badge: 'optional',
+        badgeLabel: '状況により推奨',
+        doses: [
+          { num: 1, label: '①', dayOffset: 0,  note: '初回' },
+          { num: 2, label: '②', dayOffset: 7,  note: '①から7日後' },
+          { num: 3, label: '③', dayOffset: 21, note: '①から21日後（または28日後）' }
+        ],
+        note: 'アジア・アフリカ・中南米への長期滞在・野外活動・動物接触リスクがある場合'
+      },
+      {
+        id: 'meningococcal',
+        name: '髄膜炎菌',
+        badge: 'optional',
+        badgeLabel: '状況により推奨',
+        doses: [
+          { num: 1, label: '①', dayOffset: 0, note: '1回（5年間有効）' }
+        ],
+        note: 'サハラ以南アフリカ（髄膜炎ベルト）・サウジアラビア（ハッジ巡礼）は入国要件の場合あり'
+      },
+      {
+        id: 'cholera',
+        name: 'コレラ（経口生ワクチン）',
+        badge: 'optional',
+        badgeLabel: '状況により推奨',
+        doses: [
+          { num: 1, label: '①', dayOffset: 0,  note: '初回（1週間以上前に完了すること）' },
+          { num: 2, label: '②', dayOffset: 14, note: '①から1〜6週後（2週後推奨）' }
+        ],
+        note: 'コレラ流行地・衛生状態が悪い地域への渡航・NGO・医療従事者に推奨'
+      },
+      {
+        id: 'tick_encephalitis',
+        name: 'ダニ媒介脳炎（TBE）',
+        badge: 'optional',
+        badgeLabel: '状況により推奨',
+        doses: [
+          { num: 1, label: '①', dayOffset: 0,  note: '初回' },
+          { num: 2, label: '②', dayOffset: 30, note: '①から1〜3か月後' },
+          { num: 3, label: '③', dayOffset: 270, note: '②から5〜12か月後' }
+        ],
+        note: '中央ヨーロッパ・ロシア・北海道の森林地帯でのアウトドア活動'
+      },
+    ]
+  },
+  {
+    category: 'ルーチン（接種歴確認・追加接種の検討）',
+    vaccines: [
+      {
+        id: 'mmr',
+        name: 'MMR（麻しん・風しん・おたふく）',
+        badge: 'required',
+        badgeLabel: '推奨',
+        doses: [
+          { num: 1, label: '①', dayOffset: 0,  note: '未接種・抗体不十分な場合' },
+          { num: 2, label: '②', dayOffset: 28, note: '①から4週以上あける（計2回）' }
+        ],
+        note: '1978年以前生まれや接種歴不明の場合に要確認'
+      },
+      {
+        id: 'varicella',
+        name: '水痘（水ぼうそう）',
+        badge: 'required',
+        badgeLabel: '推奨',
+        doses: [
+          { num: 1, label: '①', dayOffset: 0,  note: '抗体陰性の場合' },
+          { num: 2, label: '②', dayOffset: 28, note: '①から4〜8週後' }
+        ],
+        note: '抗体価確認の上、陰性なら2回接種'
+      },
+      {
+        id: 'influenza',
+        name: 'インフルエンザ',
+        badge: 'optional',
+        badgeLabel: '推奨',
+        doses: [
+          { num: 1, label: '①', dayOffset: 0, note: '毎年1回（出発2週間前までに）' }
+        ],
+        note: '渡航先・季節を問わず推奨'
+      },
+      {
+        id: 'polio',
+        name: 'ポリオ（追加接種）',
+        badge: 'optional',
+        badgeLabel: '状況により推奨',
+        doses: [
+          { num: 1, label: '①', dayOffset: 0, note: '成人でも未接種・抗体不十分な場合1回' }
+        ],
+        note: 'ポリオ流行地（アフガニスタン・パキスタン・アフリカ一部）への渡航'
+      },
+      {
+        id: 'covid19',
+        name: 'COVID-19',
+        badge: 'optional',
+        badgeLabel: '推奨',
+        doses: [
+          { num: 1, label: '①', dayOffset: 0, note: '最新のオミクロン対応ワクチン（年1回更新推奨）' }
+        ],
+        note: '全渡航先に推奨。国によっては入国条件の場合あり'
+      },
+    ]
+  }
+];
+
+// =============================================
+// State
+// =============================================
+let patients = JSON.parse(localStorage.getItem('travelVaxPatients') || '{}');
+let currentId = null;
+let editingId = null;
+let deletingId = null;
+
+function save() {
+  localStorage.setItem('travelVaxPatients', JSON.stringify(patients));
+}
+
+// =============================================
+// Util
+// =============================================
+function escHtml(s) {
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function addDays(date, days) {
+  const d = new Date(date);
+  d.setDate(d.getDate() + days);
+  return d;
+}
+
+function toInputDate(d) {
+  if (!d) return '';
+  const dt = typeof d === 'string' ? new Date(d) : d;
+  if (isNaN(dt)) return '';
+  return dt.toISOString().slice(0, 10);
+}
+
+function formatDate(d) {
+  if (!d) return '—';
+  const dt = typeof d === 'string' ? new Date(d) : d;
+  if (isNaN(dt)) return '—';
+  return `${dt.getFullYear()}/${String(dt.getMonth()+1).padStart(2,'0')}/${String(dt.getDate()).padStart(2,'0')}`;
+}
+
+function formatDateJp(str) {
+  if (!str) return '';
+  const [y, m, d] = str.split('-');
+  return `${y}年${parseInt(m)}月${parseInt(d)}日`;
+}
+
+function daysUntilTravel(p) {
+  if (!p.travelDate) return null;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const td = new Date(p.travelDate); td.setHours(0,0,0,0);
+  return Math.round((td - today) / 86400000);
+}
+
+// =============================================
+// Patient CRUD
+// =============================================
+function openAddModal() {
+  editingId = null;
+  document.getElementById('modal-title').textContent = '✈️ 患者を登録';
+  document.getElementById('modal-id').value = '';
+  document.getElementById('modal-initial').value = '';
+  document.getElementById('modal-dest').value = '';
+  document.getElementById('modal-travel-date').value = '';
+  document.getElementById('modal-notes').value = '';
+  document.getElementById('patient-modal').style.display = 'flex';
+  setTimeout(() => document.getElementById('modal-id').focus(), 80);
+}
+
+function openEditModal() {
+  if (!currentId) return;
+  const p = patients[currentId];
+  editingId = currentId;
+  document.getElementById('modal-title').textContent = '✎ 患者情報を編集';
+  document.getElementById('modal-id').value = p.patientId || '';
+  document.getElementById('modal-initial').value = p.name;
+  document.getElementById('modal-dest').value = p.destination || '';
+  document.getElementById('modal-travel-date').value = p.travelDate || '';
+  document.getElementById('modal-notes').value = p.notes || '';
+  document.getElementById('patient-modal').style.display = 'flex';
+  setTimeout(() => document.getElementById('modal-initial').focus(), 80);
+}
+
+function closePatientModal() {
+  document.getElementById('patient-modal').style.display = 'none';
+  editingId = null;
+}
+
+function savePatient() {
+  const name = document.getElementById('modal-initial').value.trim();
+  if (!name) { alert('イニシャル / 氏名は必須です'); return; }
+
+  const data = {
+    patientId: document.getElementById('modal-id').value.trim(),
+    name,
+    destination: document.getElementById('modal-dest').value.trim(),
+    travelDate: document.getElementById('modal-travel-date').value,
+    notes: document.getElementById('modal-notes').value.trim(),
+    selectedVaccines: [],
+    firstDoseDate: toInputDate(new Date()),
+    doneMap: {},
+    createdAt: Date.now(),
+  };
+
+  if (editingId) {
+    const old = patients[editingId];
+    data.selectedVaccines = old.selectedVaccines || [];
+    data.firstDoseDate = old.firstDoseDate || data.firstDoseDate;
+    data.doneMap = old.doneMap || {};
+    data.createdAt = old.createdAt;
+    patients[editingId] = { id: editingId, ...data };
+  } else {
+    const id = 'p_' + Date.now();
+    patients[id] = { id, ...data };
+    currentId = id;
+  }
+
+  save();
+  closePatientModal();
+  renderList();
+  renderMain();
+}
+
+function openDeleteModal() {
+  if (!currentId) return;
+  deletingId = currentId;
+  document.getElementById('delete-name').textContent = patients[currentId].name;
+  document.getElementById('delete-modal').style.display = 'flex';
+}
+
+function executeDelete() {
+  if (!deletingId) return;
+  delete patients[deletingId];
+  if (currentId === deletingId) { currentId = null; }
+  deletingId = null;
+  save();
+  document.getElementById('delete-modal').style.display = 'none';
+  renderList();
+  renderMain();
+}
+
+// =============================================
+// Sidebar
+// =============================================
+function renderList() {
+  const q = document.getElementById('search-box').value.trim().toLowerCase();
+  const list = document.getElementById('patient-list');
+  const all = Object.values(patients)
+    .filter(p => !q || p.name.toLowerCase().includes(q) || (p.patientId && p.patientId.toLowerCase().includes(q)))
+    .sort((a, b) => a.createdAt - b.createdAt);
+
+  if (all.length === 0) {
+    list.innerHTML = `<div class="empty-list">${q ? '該当なし' : '患者が登録されていません'}</div>`;
+    return;
+  }
+
+  list.innerHTML = all.map(p => {
+    const sel = p.id === currentId ? ' selected' : '';
+    const total = (p.selectedVaccines || []).reduce((sum, vid) => {
+      const v = findVaccine(vid);
+      return sum + (v ? v.doses.length : 0);
+    }, 0);
+    const done  = Object.values(p.doneMap || {}).filter(Boolean).length;
+    const days = daysUntilTravel(p);
+    const daysStr = days !== null
+      ? (days < 0 ? `<span style="color:#c0392b">渡航済 ${-days}日前</span>`
+        : days === 0 ? '<span style="color:#c0392b">本日渡航</span>'
+        : `<span style="color:${days < 14 ? '#e67e22' : '#1a6b3a'}">渡航まで${days}日</span>`)
+      : '';
+    return `<div class="patient-card${sel}" onclick="selectPatient('${escHtml(p.id)}')">
+      <div class="pc-name">${p.patientId ? `[${escHtml(p.patientId)}] ` : ''}${escHtml(p.name)}</div>
+      <div class="pc-meta">${p.destination ? escHtml(p.destination) : '渡航先未設定'}</div>
+      ${total > 0 ? `<div class="pc-progress">💉 ${done}/${total}回 接種済</div>` : ''}
+      ${daysStr ? `<div class="pc-meta" style="margin-top:2px">${daysStr}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function selectPatient(id) {
+  currentId = id;
+  renderList();
+  renderMain();
+}
+
+// =============================================
+// Main panel
+// =============================================
+function findVaccine(vid) {
+  for (const cat of VACCINE_CATEGORIES)
+    for (const v of cat.vaccines)
+      if (v.id === vid) return v;
+  return null;
+}
+
+function renderMain() {
+  const main = document.getElementById('main-panel');
+  if (!currentId || !patients[currentId]) {
+    main.innerHTML = '<div class="empty-main">← 患者を選択するか、新規追加してください</div>';
+    return;
+  }
+  const p = patients[currentId];
+  const days = daysUntilTravel(p);
+  const daysHtml = days !== null
+    ? (days < 0 ? `<span style="color:#c0392b">渡航済（${-days}日前）</span>`
+      : days === 0 ? '<span style="color:#c0392b">本日渡航</span>'
+      : `<span style="color:${days < 14 ? '#e67e22' : '#1a6b3a'}">渡航まで<strong>${days}</strong>日</span>`)
+    : '';
+
+  main.innerHTML = `
+    <!-- Patient header -->
+    <div class="patient-header-card">
+      <div>
+        <div class="ph-name">${p.patientId ? `[${escHtml(p.patientId)}] ` : ''}${escHtml(p.name)}</div>
+        <div class="ph-meta">
+          ${p.destination ? `<span>✈️ ${escHtml(p.destination)}</span>` : ''}
+          ${p.travelDate ? `<span>📅 渡航予定: ${formatDateJp(p.travelDate)}</span>` : ''}
+          ${daysHtml}
+          ${p.notes ? `<span>📝 ${escHtml(p.notes)}</span>` : ''}
+        </div>
+      </div>
+      <div class="ph-actions">
+        <button class="btn-sm" onclick="openEditModal()">✎ 編集</button>
+        <button class="btn-sm-danger" onclick="openDeleteModal()">🗑</button>
+      </div>
+    </div>
+
+    <!-- Vaccine selector -->
+    <div class="section-card">
+      <div class="section-header">
+        <h2>💉 ワクチンを選択・初回接種日を設定</h2>
+      </div>
+      <div class="vaccine-selector">
+        <div class="date-row">
+          <label>初回接種予定日：</label>
+          <input type="date" id="first-dose-date" value="${escHtml(p.firstDoseDate || toInputDate(new Date()))}"
+            onchange="onFirstDateChange(this.value)">
+        </div>
+        ${VACCINE_CATEGORIES.map(cat => `
+          <div class="vax-category">${escHtml(cat.category)}</div>
+          <div class="vaccine-grid">
+            ${cat.vaccines.map(v => {
+              const checked = (p.selectedVaccines || []).includes(v.id);
+              return `<label class="vax-item${checked ? ' selected' : ''}" onclick="toggleVaccine('${escHtml(v.id)}',this)">
+                <input type="checkbox" ${checked ? 'checked' : ''} onclick="event.stopPropagation();" onchange="toggleVaccine('${escHtml(v.id)}',this.closest('.vax-item'))">
+                <div class="vax-item-text">
+                  <div class="vax-item-name">${escHtml(v.name)}</div>
+                  <div class="vax-item-detail">${v.doses.length}回接種 · ${escHtml(v.note)}</div>
+                </div>
+              </label>`;
+            }).join('')}
+          </div>
+        `).join('')}
+        <button class="btn-generate" onclick="generateSchedule()">📅 スケジュールを生成</button>
+      </div>
+    </div>
+
+    <!-- Schedule -->
+    <div class="section-card" id="schedule-card" style="display:none">
+      <div class="section-header" id="schedule-card-header">
+        <h2>📋 推奨接種スケジュール</h2>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button class="btn-sm" onclick="window.print()">🖨 印刷</button>
+          <span class="print-hint">渡航前の接種完了を目指してください</span>
+        </div>
+      </div>
+      <div id="schedule-body"></div>
+    </div>
+  `;
+
+  // 既存スケジュールがあれば再描画
+  if ((p.selectedVaccines || []).length > 0) {
+    generateSchedule();
+  }
+}
+
+function onFirstDateChange(val) {
+  if (!currentId) return;
+  patients[currentId].firstDoseDate = val;
+  save();
+}
+
+function toggleVaccine(vid, el) {
+  if (!currentId) return;
+  const p = patients[currentId];
+  const arr = p.selectedVaccines || [];
+  const idx = arr.indexOf(vid);
+  if (idx >= 0) {
+    arr.splice(idx, 1);
+    el.classList.remove('selected');
+    el.querySelector('input[type="checkbox"]').checked = false;
+  } else {
+    arr.push(vid);
+    el.classList.add('selected');
+    el.querySelector('input[type="checkbox"]').checked = true;
+  }
+  p.selectedVaccines = arr;
+  save();
+}
+
+function generateSchedule() {
+  if (!currentId) return;
+  const p = patients[currentId];
+  const selectedIds = p.selectedVaccines || [];
+  const firstDate = p.firstDoseDate ? new Date(p.firstDoseDate) : new Date();
+  firstDate.setHours(0,0,0,0);
+
+  const schedCard = document.getElementById('schedule-card');
+  const schedBody = document.getElementById('schedule-body');
+  if (!schedCard || !schedBody) return;
+
+  if (selectedIds.length === 0) {
+    schedCard.style.display = 'none';
+    return;
+  }
+
+  // 全ドーズを日付でフラット化
+  const rows = [];
+  for (const vid of selectedIds) {
+    const v = findVaccine(vid);
+    if (!v) continue;
+    v.doses.forEach(dose => {
+      const scheduledDate = addDays(firstDate, dose.dayOffset);
+      const key = `${vid}_${dose.num}`;
+      rows.push({
+        vaccine: v,
+        dose,
+        scheduledDate,
+        key,
+        done: !!(p.doneMap || {})[key]
+      });
+    });
+  }
+
+  // 日付でソート
+  rows.sort((a, b) => a.scheduledDate - b.scheduledDate);
+
+  // 日付グループ別に表示
+  const grouped = {};
+  rows.forEach(r => {
+    const k = toInputDate(r.scheduledDate);
+    if (!grouped[k]) grouped[k] = [];
+    grouped[k].push(r);
+  });
+
+  const badgeHtml = (v) => {
+    const map = { mandatory: 'badge-mandatory', required: 'badge-required', optional: 'badge-optional' };
+    return `<span class="badge ${map[v.badge] || 'badge-optional'}">${escHtml(v.badgeLabel)}</span>`;
+  };
+
+  const today = new Date(); today.setHours(0,0,0,0);
+  const travelDate = p.travelDate ? new Date(p.travelDate) : null;
+  if (travelDate) travelDate.setHours(0,0,0,0);
+
+  let html = `<table class="schedule-table">
+    <thead><tr>
+      <th>接種日</th><th>ワクチン</th><th>回数</th><th>種別</th><th>備考</th><th style="text-align:center">接種済</th>
+    </tr></thead>
+    <tbody>`;
+
+  let warningShown = false;
+  Object.entries(grouped).sort().forEach(([dateStr, dateRows]) => {
+    const dt = new Date(dateStr);
+    const isPast = dt < today;
+    const isToday = dateStr === toInputDate(today);
+    const afterTravel = travelDate && dt > travelDate;
+
+    let groupLabel = formatDate(dt);
+    if (isToday) groupLabel += ' ⭐ 本日';
+    if (afterTravel) groupLabel += ' ⚠️ 渡航後';
+
+    const rowspan = dateRows.length;
+    html += `<tr class="date-group-header"><td colspan="6">${groupLabel}${dateRows.length > 1 ? ` （${dateRows.length}種同日接種可能）` : ''}</td></tr>`;
+
+    dateRows.forEach((r, i) => {
+      const doneClass = r.done ? ' class="row-done"' : '';
+      html += `<tr${doneClass}>
+        <td>${formatDate(r.scheduledDate)}</td>
+        <td style="font-weight:600">${escHtml(r.vaccine.name)}</td>
+        <td>${escHtml(r.dose.label)}</td>
+        <td>${badgeHtml(r.vaccine)}</td>
+        <td style="font-size:0.78rem;color:#666">${escHtml(r.dose.note)}</td>
+        <td style="text-align:center">
+          <input type="checkbox" class="done-check" ${r.done ? 'checked' : ''}
+            onchange="toggleDone('${escHtml(r.key)}', this.checked)"
+            title="接種済みにする">
+        </td>
+      </tr>`;
+    });
+  });
+
+  html += '</tbody></table>';
+
+  // 渡航前完了チェック
+  if (travelDate) {
+    const notDoneBeforeTravel = rows.filter(r => !r.done && r.scheduledDate <= travelDate);
+    const afterTravelRows = rows.filter(r => r.scheduledDate > travelDate);
+    if (afterTravelRows.length > 0) {
+      html = `<div style="background:#fff3cd;padding:10px 20px;font-size:0.84rem;color:#856404;border-bottom:1px solid #ffeaa7">
+        ⚠️ <strong>${afterTravelRows.length}回分</strong>のワクチンが渡航予定日（${formatDateJp(p.travelDate)}）以降に設定されています。できるだけ渡航前に完了することをご検討ください。
+      </div>` + html;
+    }
+  }
+
+  schedBody.innerHTML = html;
+  schedCard.style.display = '';
+}
+
+function toggleDone(key, isDone) {
+  if (!currentId) return;
+  const p = patients[currentId];
+  if (!p.doneMap) p.doneMap = {};
+  p.doneMap[key] = isDone;
+  save();
+  renderList();
+  // テーブル行の見た目だけ更新（再描画しない）
+  const cb = document.querySelector(`input[onchange*="'${key}'"]`);
+  if (cb) {
+    const tr = cb.closest('tr');
+    if (tr) {
+      if (isDone) tr.classList.add('row-done');
+      else tr.classList.remove('row-done');
+    }
+  }
+}
+
+// =============================================
+// Init
+// =============================================
+renderList();
+renderMain();
+</script>
+</body>
+</html>
