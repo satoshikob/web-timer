@@ -829,8 +829,8 @@ function renderMain() {
           <div class="vaccine-grid">
             ${cat.vaccines.map(v => {
               const checked = (p.selectedVaccines || []).includes(v.id);
-              return `<label class="vax-item${checked ? ' selected' : ''}" onclick="toggleVaccine('${escHtml(v.id)}',this)">
-                <input type="checkbox" ${checked ? 'checked' : ''} onclick="event.stopPropagation();" onchange="toggleVaccine('${escHtml(v.id)}',this.closest('.vax-item'))">
+              return `<label class="vax-item${checked ? ' selected' : ''}">
+                <input type="checkbox" ${checked ? 'checked' : ''} onchange="toggleVaccine('${escHtml(v.id)}',this.closest('.vax-item'),this.checked)">
                 <div class="vax-item-text">
                   <div class="vax-item-name">${escHtml(v.name)}</div>
                   <div class="vax-item-detail">${v.doses.length}回接種 · ${escHtml(v.note)}</div>
@@ -868,19 +868,17 @@ function onFirstDateChange(val) {
   save();
 }
 
-function toggleVaccine(vid, el) {
+function toggleVaccine(vid, el, checked) {
   if (!currentId) return;
   const p = patients[currentId];
   const arr = p.selectedVaccines || [];
   const idx = arr.indexOf(vid);
-  if (idx >= 0) {
-    arr.splice(idx, 1);
-    el.classList.remove('selected');
-    el.querySelector('input[type="checkbox"]').checked = false;
-  } else {
-    arr.push(vid);
+  if (checked) {
+    if (idx < 0) arr.push(vid);
     el.classList.add('selected');
-    el.querySelector('input[type="checkbox"]').checked = true;
+  } else {
+    if (idx >= 0) arr.splice(idx, 1);
+    el.classList.remove('selected');
   }
   p.selectedVaccines = arr;
   save();
