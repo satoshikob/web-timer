@@ -1308,6 +1308,12 @@ const CDC_VAX_JP = {
   'tuberculosis':            'BCG（結核）',
   'pneumococcal':            '肺炎球菌',
   'mpox':                    'エムポックス（サル痘）',
+  'monkeypox':               'エムポックス（サル痘）',
+  'leptospirosis':           'レプトスピラ症',
+  'zika':                    'ジカ熱（Zika）',
+  'hantavirus':              'ハンタウイルス感染症',
+  'schistosomiasis':         '住血吸虫症',
+  'brucellosis':             'ブルセラ症',
 };
 
 // CDCレベル → 日本語
@@ -1788,6 +1794,48 @@ function translateCdcSentence(s) {
     return 'ルーチンワクチンの接種が完了していることを確認してください。';
   if (/up-to-date on all routine/i.test(norm))
     return 'ルーチンワクチンの接種状況を確認してください。';
+
+  // ── 乳児・高齢者追加接種 ──
+  if (/infants.*6 to 11 months.*hepatitis a/i.test(norm))
+    return '生後6〜11か月の乳児も接種推奨（通常回数には含まれません）。';
+  if (/infants.*months.*vaccinated/i.test(norm))
+    return '乳児も接種が推奨されます（通常回数には含まれません）。';
+  if (/travelers 60 years and older.*vaccinated.*before traveling/i.test(norm))
+    return '60歳以上の未接種渡航者も渡航前の接種が推奨されます。';
+  if (/60 years and older.*vaccinated/i.test(norm))
+    return '60歳以上の未接種者も接種が推奨されます。';
+
+  // ── COVID-19 ──
+  if (/please see your covid-19 vaccination/i.test(norm))
+    return '詳細はCDCのCOVID-19ワクチンページをご確認ください。';
+  if (/covid-19 vaccination.*page/i.test(norm))
+    return 'CDCのCOVID-19ワクチンページをご参照ください。';
+
+  // ── レプトスピラ ──
+  if (/touching urine or other body fluids.*leptospirosis/i.test(norm))
+    return '感染動物の尿・体液への接触、汚染された淡水や泥との接触・飲用で感染します。';
+  if (/urine-contaminated.*fresh water/i.test(norm))
+    return '尿で汚染された淡水での水泳や土との接触でも感染します。';
+
+  // ── ジカ熱 ──
+  if (/mosquito bite.*infected pregnant woman.*spread/i.test(norm))
+    return '主に蚊から感染。感染した妊婦から胎児への感染もあります。';
+  if (/infected pregnant woman.*spread.*baby/i.test(norm))
+    return '感染した妊婦から赤ちゃんへの感染もあります。';
+
+  // ── ハンタウイルス・TB ──
+  if (/breathing in.*tb bacteria.*air.*infected/i.test(norm))
+    return '感染者の空気（飛沫核）を吸い込むことで感染します。';
+  if (/breathing in air.*accidentally eating food.*contaminated/i.test(norm))
+    return '空気感染または汚染食物の摂取で感染します。';
+  if (/breathe in.*bacteria.*air/i.test(norm))
+    return '空気感染（飛沫核）で感染します。';
+
+  // ── デング熱・Mosquito bite ──
+  if (/^mosquito bite$/i.test(norm))
+    return '蚊から感染します。';
+  if (/mosquito bite/i.test(norm) && norm.length < 30)
+    return '蚊から感染します。';
 
   // ── 感染経路 ──
   if (/spread.*contaminated food.*water/i.test(norm))
