@@ -1279,21 +1279,15 @@ function buildForthUrl(destination) {
   return `https://www.forth.go.jp/destinations/country/${c.forth}.html`;
 }
 
-// CORS プロキシ経由フェッチ（複数フォールバック）
+// CORS プロキシ経由フェッチ
 async function fetchViaProxy(url) {
-  const proxies = [
-    u => `https://corsproxy.io/?url=${encodeURIComponent(u)}`,
-    u => `https://api.allorigins.win/get?url=${encodeURIComponent(u)}`,
-  ];
-  for (const makeUrl of proxies) {
-    try {
-      const res = await fetch(makeUrl(url), { signal: AbortSignal.timeout(8000) });
-      if (!res.ok) continue;
-      const json = await res.json().catch(async () => ({ contents: await res.text() }));
-      const html = json.contents || json;
-      if (typeof html === 'string' && html.length > 200) return html;
-    } catch(e) { /* 次を試す */ }
-  }
+  const workerUrl = `https://vaccine-proxy.dirtydddc.workers.dev/?url=${encodeURIComponent(url)}`;
+  try {
+    const res = await fetch(workerUrl, { signal: AbortSignal.timeout(12000) });
+    if (!res.ok) return null;
+    const html = await res.text();
+    if (html && html.length > 200) return html;
+  } catch(e) { /* 失敗 */ }
   return null;
 }
 
