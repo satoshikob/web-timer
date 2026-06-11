@@ -1651,85 +1651,11 @@ function renderLookupHtml(cache, resultEl) {
   }
 }
 
-// CDC推奨テキストを日本語に変換
+// CDC推奨テキストをそのまま返す（医療情報は原文維持）
 function translateCdcNote(text) {
   if (!text) return '';
-  if (/[぀-ヿ一-鿿]/.test(text)) return text;
   const t = text.trim();
-
-  // パターンマッチングで主要文を日本語化
-  const rules = [
-    // 「not recommended / not required」系
-    [/Vaccine is not recommended/i,       'ワクチン接種は通常不要'],
-    [/not recommended for most travelers/i,'ほとんどの渡航者には不要'],
-    // 「Recommended for most / all」
-    [/Recommended for most travelers[^.]*especially[^.]*friends or relatives[^.]*rural/i,
-                                           'ほとんどの渡航者に推奨（友人・親族宅滞在や農村部訪問者に特に推奨）'],
-    [/Recommended for most travelers[^.]*especially[^.]*rural/i,
-                                           'ほとんどの渡航者に推奨（農村部訪問者に特に推奨）'],
-    [/Recommended for most travelers/i,    'ほとんどの渡航者に推奨'],
-    [/Recommended for all travelers/i,     '全渡航者に推奨'],
-    // 「Recommended for unvaccinated」
-    [/Recommended for unvaccinated travelers[^.]*1 year[^.]*older/i,
-                                           '未接種の1歳以上の渡航者に推奨'],
-    [/Recommended for unvaccinated travelers/i, '未接種の渡航者に推奨'],
-    // 「Recommended for travelers who are moving / live」
-    [/Recommended for travelers who[^.]*moving[^.]*live[^.]*month/i,
-                                           '1か月以上の長期滞在・移住予定の渡航者に推奨'],
-    [/Recommended for travelers who[^.]*long[^.]*time/i,
-                                           '長期滞在予定の渡航者に推奨'],
-    // 「Consider for」
-    [/Consider for some travelers[^.]*depending on[^.]*activities/i,
-                                           '行動内容によっては接種を検討'],
-    [/Consider for some travelers/i,       '一部の渡航者は接種を検討'],
-    [/Consider for travelers/i,            '渡航者は接種を検討'],
-    // 「CDC recommends … malaria / prescription medicine」
-    [/CDC recommends[^.]*prescription medicine[^.]*malaria/i,
-                                           '流行地域への渡航者にマラリア予防薬を推奨'],
-    [/CDC recommends that travelers[^.]*areas[^.]*take[^.]*medicine/i,
-                                           '特定地域への渡航者に予防薬を推奨'],
-    // 「Cases of … on the rise / measles / rubella」
-    [/Cases of measles[^.]*rise[^.]*Travelers[^.]*risk/i,
-                                           '麻しんは世界的に増加中。未接種または接種不完全な渡航者は要注意'],
-    [/Cases of[^.]*rise/i,                 '世界的に感染者増加中。接種状況を確認'],
-    // 「Dogs / Animals infected with rabies」
-    [/Dogs infected with rabies[^.]*sometimes found/i,
-                                           '狂犬病感染動物が存在。咬傷時は現地での対応が必要'],
-    [/infected with rabies/i,              '狂犬病リスクあり'],
-    // 「Yellow fever」「entry requirements」
-    [/Country entry requirements[^:]*:[^.]*not required[^.]*Travel from countries with risk/i,
-                                           '通常不要だが黄熱流行国経由入国時は要求される場合あり'],
-    [/Country entry requirements/i,        '入国要件あり（渡航ルートにより要確認）'],
-    // 「Routine vaccines」
-    [/Make sure[^.]*up-to-date[^.]*routine[^.]*vaccines/i,
-                                           '定期ワクチンの接種歴を確認'],
-    [/up-to-date on all routine/i,         '定期ワクチンの接種歴を確認'],
-    // 「Spread through」
-    [/[Ss]pread through[^.]*food[^.]*water/i, '食物・水経由で感染'],
-    [/[Ss]pread through[^.]*mosquito/i,    '蚊による感染'],
-    [/[Ss]pread through[^.]*tick/i,        'マダニによる感染'],
-    // 「Through contaminated food / water」
-    [/[Tt]hrough[^.]*contaminated food[^.]*water/i, '汚染された食物・水から感染'],
-    // 「risk for travelers who」
-    [/risk[^.]*travelers[^.]*not[^.]*vaccinated/i, '未接種の渡航者はリスクあり'],
-    // 「if traveling to」「if going to」
-    [/if[^.]*traveling[^.]*rural[^.]*areas/i,  '農村部への渡航者は検討推奨'],
-    [/if[^.]*going[^.]*rural[^.]*areas/i,      '農村部への渡航者は検討推奨'],
-    // 「long-term travelers」「extended stay」
-    [/long.?term travelers/i,              '長期渡航者に推奨'],
-    [/extended stay/i,                     '長期滞在者は要検討'],
-    // 「Travelers should」
-    [/Travelers should[^.]*check[^.]*vaccin/i, '渡航前に接種状況を確認'],
-    [/Travelers should/i,                   '渡航者は要確認'],
-    // フォールバック：先頭の主要フレーズだけ拾う
-    [/^(Recommended|Consider|CDC recommends)/i, '渡航者に推奨（詳細はCDCサイト参照）'],
-  ];
-
-  for (const [re, jp] of rules) {
-    if (re.test(t)) return jp;
-  }
-  // どのパターンも一致しない場合は省略表示
-  return t.length > 80 ? t.slice(0, 78) + '…' : t;
+  return t.length > 160 ? t.slice(0, 158) + '…' : t;
 }
 
 // セクションのアコーディオン開閉
