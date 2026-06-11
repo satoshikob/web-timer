@@ -1795,6 +1795,40 @@ function translateCdcSentence(s) {
   if (/up-to-date on all routine/i.test(norm))
     return 'ルーチンワクチンの接種状況を確認してください。';
 
+  // ── A型肝炎 詳細 ──
+  if (/the dose does not count.*routine.*2.dose series/i.test(norm))
+    return 'この接種回は通常の2回シリーズには含まれません。';
+  if (/travelers allergic.*vaccine component.*immune globulin/i.test(norm))
+    return 'ワクチン成分にアレルギーがある方は免疫グロブリン単回投与で最長2か月間の予防効果が得られます。';
+  if (/unvaccinated travelers.*over 40.*immunocompromised.*2 weeks/i.test(norm))
+    return '40歳以上・免疫不全・慢性疾患がある未接種者で2週間以内に渡航予定の場合は、初回接種と免疫グロブリンの同時投与を検討してください。';
+  if (/unvaccinated travelers.*40.*chronic medical/i.test(norm))
+    return '40歳以上・慢性疾患のある未接種渡航者は特に要注意です。';
+  if (/immune globulin.*provides effective protection/i.test(norm))
+    return '免疫グロブリンは投与量に応じて最長2か月間の有効な感染予防効果があります。';
+
+  // ── マラリア詳細 ──
+  if (/talk to your doctor.*malaria medication/i.test(norm))
+    return '服用するマラリア予防薬については医師にご相談ください。';
+  if (/zoonotic transmission.*p\. knowlesi.*rural.*forested/i.test(norm))
+    return 'サルマラリア（P. knowlesi）が農村・森林地帯で人への感染リスクがあります。';
+  if (/no malaria transmission.*kuala lumpur/i.test(norm))
+    return 'クアラルンプール（首都）・ペナン島などの都市部ではマラリアのリスクはありません。';
+  if (/no malaria transmission in other areas/i.test(norm))
+    return '他の地域ではマラリアの感染リスクはありません。';
+  if (/transmission areas/i.test(norm) && norm.length < 30)
+    return '感染リスク地域が存在します。';
+  if (/drug resistance/i.test(norm) && norm.length < 30)
+    return '薬剤耐性あり。';
+
+  // ── 狂犬病 詳細 ──
+  if (/rabies pre-exposure vaccination.*considerations/i.test(norm))
+    return '暴露前ワクチン接種の検討基準：職業・レクリエーション活動での動物接触リスクがある場合、医療へのアクセスが限られる地域への渡航、長期滞在（1か月以上）など。';
+  if (/rabies.*exposure.*occur.*vaccines.*available/i.test(norm))
+    return '暴露後も現地でワクチン接種が可能ですが、事前接種で治療が大幅に簡略化されます。';
+  if (/rabies vaccines.*typically available/i.test(norm))
+    return '現地でもワクチン接種は可能ですが、アクセスに注意が必要です。';
+
   // ── 乳児・高齢者追加接種 ──
   if (/infants.*6 to 11 months.*hepatitis a/i.test(norm))
     return '生後6〜11か月の乳児も接種推奨（通常回数には含まれません）。';
@@ -1863,8 +1897,9 @@ function translateCdcSentence(s) {
   if (/travelers should/i.test(norm))
     return '渡航者は確認・注意が必要です。';
 
-  // マッチしなければ原文のまま
-  return norm;
+  // 短いフレーズはそのまま、長い英文は省略
+  if (norm.length <= 50) return norm;
+  return '（詳細はCDCサイトをご確認ください）';
 }
 
 // セクションのアコーディオン開閉
