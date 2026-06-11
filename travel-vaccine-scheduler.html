@@ -351,23 +351,45 @@
     .lookup-link-cdc  { background: #e8f0fe; color: #1a56db; border: 1px solid #b3c7f9; }
     .lookup-link-forth { background: #e8f5e9; color: #1a6b3a; border: 1px solid #a5d6a7; }
     .lookup-link:hover { opacity: 0.8; }
-    .lookup-results { display: flex; gap: 16px; flex-wrap: wrap; }
-    .lookup-source { flex: 1; min-width: 240px; }
+    .lookup-results { display: flex; flex-direction: column; gap: 16px; }
+    .lookup-source { width: 100%; }
     .lookup-source-title {
-      font-size: 0.8rem; font-weight: 700; color: #555; margin-bottom: 8px;
-      display: flex; align-items: center; gap: 6px;
+      font-size: 0.85rem; font-weight: 700; color: #333; margin-bottom: 8px;
+      display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
     }
-    .lookup-vax-list { display: flex; flex-direction: column; gap: 4px; }
+    .lookup-source-title a { font-size: 0.75rem; font-weight: normal; }
+    .lookup-vax-list { display: flex; flex-direction: column; gap: 5px; }
     .lookup-vax-item {
-      display: flex; align-items: center; gap: 8px;
-      padding: 5px 8px; border-radius: 6px; font-size: 0.84rem;
-      background: #f5faf7; border: 1px solid #e0ede6;
+      display: grid;
+      grid-template-columns: 20px 1fr auto;
+      align-items: start;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 7px;
+      font-size: 0.84rem;
+      background: #f5faf7;
+      border: 1px solid #e0ede6;
+      cursor: pointer;
     }
+    .lookup-vax-item:hover { opacity: 0.85; }
     .lookup-vax-item.lvl-recommended { background: #fff8e1; border-color: #ffe082; }
     .lookup-vax-item.lvl-consider    { background: #fde8e8; border-color: #f5c6c6; }
     .lookup-vax-item.lvl-routine     { background: #f0f4f8; border-color: #d0dae5; color: #666; }
-    .lookup-vax-name { font-weight: 600; flex: 1; }
-    .lookup-vax-level { font-size: 0.7rem; white-space: nowrap; color: #888; }
+    .lookup-vax-item.selected        { outline: 2px solid #1a6b3a; }
+    .lookup-vax-item input[type="checkbox"] { width: 16px; height: 16px; margin-top: 2px; cursor: pointer; }
+    .lookup-vax-info { display: flex; flex-direction: column; gap: 2px; }
+    .lookup-vax-name { font-weight: 700; }
+    .lookup-vax-note { font-size: 0.75rem; color: #666; line-height: 1.4; }
+    .lookup-vax-level { font-size: 0.7rem; white-space: nowrap; color: #888; padding-top: 3px; }
+    .lookup-level-header {
+      font-size: 0.75rem; font-weight: 700; margin: 8px 0 4px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .lookup-add-all {
+      background: none; border: 1px solid #1a6b3a; color: #1a6b3a;
+      border-radius: 5px; font-size: 0.72rem; padding: 2px 8px; cursor: pointer; margin-left: auto;
+    }
+    .lookup-add-all:hover { background: #eef8f2; }
     .lookup-loading { color: #888; font-size: 0.86rem; padding: 8px 0; }
     .lookup-error { color: #c0392b; font-size: 0.84rem; padding: 8px 0; }
     .lookup-notfound { color: #888; font-size: 0.84rem; padding: 8px 0; }
@@ -1291,43 +1313,76 @@ async function fetchViaProxy(url) {
   return null;
 }
 
-// CDC HTMLからワクチンリストを抽出
+// ワクチン日本語名 → vaccine ID マッピング
+const VAX_NAME_TO_ID = {
+  'A型肝炎': 'hepa',
+  'B型肝炎': 'hepb',
+  '腸チフス': 'typhoid',
+  '狂犬病': 'rabies',
+  '日本脳炎': 'japanese_encephalitis',
+  '黄熱': 'yellowfever',
+  'コレラ': 'cholera',
+  '髄膜炎菌': 'meningococcal',
+  'チクングニア': 'chikungunya',
+  'COVID-19': 'covid19',
+  'インフルエンザ': 'influenza',
+  'MR（麻しん・風しん）': 'mr',
+  '麻しん（MR）': 'mr',
+  'MR・おたふく（MMR）': 'mr',
+  'おたふくかぜ': 'mumps',
+  '水痘': 'varicella',
+  '破傷風': 'tetanus',
+  'ジフテリア・破傷風': 'tetanus',
+  'ダニ媒介脳炎': 'tick_encephalitis',
+  'BCG（結核）': 'bcg',
+  'ポリオ': 'polio',
+};
+
+function nameToVaccineId(jpName) {
+  if (VAX_NAME_TO_ID[jpName]) return VAX_NAME_TO_ID[jpName];
+  for (const [key, id] of Object.entries(VAX_NAME_TO_ID)) {
+    if (jpName.includes(key) || key.includes(jpName)) return id;
+  }
+  return null;
+}
+
+// CDC HTMLからワクチンリストを抽出（名前＋推奨テキスト）
 function parseCDC(html) {
   const doc = new DOMParser().parseFromString(html, 'text/html');
   const result = { recommended: [], consider: [], routine: [] };
 
-  // 方法1: テーブル行から抽出
   let currentLevel = 'recommended';
   doc.querySelectorAll('table tr').forEach(tr => {
     const header = tr.querySelector('h3,h4');
     if (header) {
       const t = header.textContent.toLowerCase();
-      if (t.includes('routine'))          currentLevel = 'routine';
-      else if (t.includes('consider'))    currentLevel = 'consider';
-      else if (t.includes('recommend'))   currentLevel = 'recommended';
+      if (t.includes('routine'))        currentLevel = 'routine';
+      else if (t.includes('consider'))  currentLevel = 'consider';
+      else if (t.includes('recommend')) currentLevel = 'recommended';
       return;
     }
-    // 最初の<td>内のリンクテキストをワクチン名として取得
-    const firstTd = tr.querySelector('td:first-child');
-    if (!firstTd) return;
-    const link = firstTd.querySelector('a');
-    const rawName = (link ? link.textContent : firstTd.textContent).trim();
+    const tds = tr.querySelectorAll('td');
+    if (tds.length < 1) return;
+    const link = tds[0].querySelector('a');
+    const rawName = (link ? link.textContent : tds[0].textContent).trim();
     if (!rawName) return;
     const jpName = cdcNameToJp(rawName);
-    if (jpName && !result[currentLevel].includes(jpName)) {
-      result[currentLevel].push(jpName);
-    }
+    if (!jpName) return;
+    // 推奨テキスト（2列目）
+    const note = tds[1] ? tds[1].textContent.replace(/\s+/g, ' ').trim().slice(0, 180) : '';
+    const already = result[currentLevel].some(x => x.nameJp === jpName);
+    if (!already) result[currentLevel].push({ nameJp: jpName, note });
   });
 
-  // 方法2: テーブルが空の場合、本文テキストからキーワード検索
-  const totalFound = result.recommended.length + result.consider.length + result.routine.length;
-  if (totalFound < 2) {
-    const bodyText = doc.body ? doc.body.innerText || doc.body.textContent : '';
-    Object.keys(CDC_VAX_JP).forEach(eng => {
+  // フォールバック：テーブル解析失敗時はキーワード検索
+  const total = result.recommended.length + result.consider.length + result.routine.length;
+  if (total < 2) {
+    const bodyText = doc.body ? doc.body.textContent : '';
+    Object.entries(CDC_VAX_JP).forEach(([eng, jp]) => {
       if (bodyText.toLowerCase().includes(eng)) {
-        const jp = CDC_VAX_JP[eng];
-        if (!result.recommended.includes(jp) && !result.consider.includes(jp) && !result.routine.includes(jp)) {
-          result.recommended.push(jp);
+        const all = [...result.recommended, ...result.consider, ...result.routine];
+        if (!all.some(x => x.nameJp === jp)) {
+          result.recommended.push({ nameJp: jp, note: '' });
         }
       }
     });
@@ -1336,47 +1391,48 @@ function parseCDC(html) {
 }
 
 function cdcNameToJp(name) {
-  const n = name.toLowerCase().trim()
-    .replace(/\s*\(.*?\)/g, '')  // 括弧除去
-    .trim();
-  // 完全一致
+  const n = name.toLowerCase().trim().replace(/\s*\(.*?\)/g, '').trim();
   if (CDC_VAX_JP[n]) return CDC_VAX_JP[n];
-  // 部分一致
   for (const [key, jp] of Object.entries(CDC_VAX_JP)) {
     if (n.includes(key) || key.includes(n)) return jp;
   }
-  // 先頭単語だけで試す
   const word = n.split(/[\s-]/)[0];
   if (word && CDC_VAX_JP[word]) return CDC_VAX_JP[word];
-  // 固有名詞（翻訳できない場合は原語で返す）
   if (name.length > 2 && /[A-Za-z]/.test(name)) return name;
   return null;
 }
 
-// FORTH HTMLからワクチンリストを抽出（日本語テキスト）
+// FORTH HTMLからワクチンリストを抽出（名前＋注記）
 function parseFORTH(html) {
   const doc = new DOMParser().parseFromString(html, 'text/html');
   const bodyText = doc.body ? doc.body.textContent : html;
 
-  // パターン1: 「予防接種：」以降のカンマ区切り
-  const m1 = bodyText.match(/予防接種[：:・]([^\n。]{5,200})/);
+  // 脚注マップを先に作成（＊1 → 注記テキスト）
+  const footnotes = {};
+  const fnMatches = [...bodyText.matchAll(/[＊\*](\d+)[　 ]*([^\n＊\*]{5,100})/g)];
+  fnMatches.forEach(m => { footnotes[m[1]] = m[2].trim(); });
+
+  // パターン1: 「予防接種：」以降
+  const m1 = bodyText.match(/予防接種[：:・\s]([^\n。]{5,300})/);
   if (m1) {
-    return m1[1].split(/[、,，。\n]/)
-      .map(s => s.replace(/\＊\d+|[\*\(\（\)\）]/g, '').trim())
-      .filter(s => s.length >= 2);
+    return m1[1].split(/[、,，。\n]/).map(s => {
+      const fnMatch = s.match(/[＊\*](\d+)/);
+      const note = fnMatch && footnotes[fnMatch[1]] ? footnotes[fnMatch[1]] : '';
+      const name = s.replace(/[＊\*]\d+/g, '').replace(/[\(\（\)\）]/g, '').trim();
+      if (name.length < 2) return null;
+      return { name, note };
+    }).filter(Boolean);
   }
 
-  // パターン2: 「受けておきたい予防接種」セクション以降のテキスト
-  const m2 = bodyText.match(/受けておきたい予防接種[\s\S]{0,300}/);
-  if (m2) {
-    // 日本語ワクチン名パターン
-    const names = [];
-    const vaccinePattern = /(A型肝炎|B型肝炎|腸チフス|狂犬病|日本脳炎|黄熱|コレラ|髄膜炎菌|マラリア|デング|チクングニア|破傷風|水痘|麻[しし]ん|風[しし]ん|おたふく|BCG|結核|ポリオ|インフルエンザ|COVID)/g;
-    const found = [...m2[0].matchAll(vaccinePattern)];
-    found.forEach(f => { if (!names.includes(f[0])) names.push(f[0]); });
-    return names;
-  }
-  return [];
+  // パターン2: ワクチン名キーワード検索
+  const m2 = bodyText.match(/受けておきたい予防接種[\s\S]{0,500}/);
+  const section = m2 ? m2[0] : bodyText;
+  const vaccinePattern = /(A型肝炎|B型肝炎|腸チフス|狂犬病|日本脳炎|黄熱|コレラ|髄膜炎菌|マラリア|デング|チクングニア|破傷風|水痘|麻しん|風しん|おたふく|BCG|結核|ポリオ|インフルエンザ|COVID)/g;
+  const names = [];
+  [...section.matchAll(vaccinePattern)].forEach(f => {
+    if (!names.some(x => x.name === f[0])) names.push({ name: f[0], note: '' });
+  });
+  return names;
 }
 
 // メイン実行
@@ -1418,51 +1474,73 @@ async function lookupVaccines() {
     else           forthError = true;
   }
 
+  const p2 = patients[currentId]; // 最新の選択状態を取得
+  const sel = new Set(p2.selectedVaccines || []);
+
+  function vaxItem(nameJp, note, levelClass, levelLabel) {
+    const vid = nameToVaccineId(nameJp);
+    const checked = vid && sel.has(vid);
+    const noId = !vid ? ' style="opacity:0.6"' : '';
+    const title = vid ? '' : ' title="このアプリにワクチン定義がありません"';
+    return `<label class="lookup-vax-item ${levelClass}${checked ? ' selected' : ''}"${noId}${title}
+        onclick="event.preventDefault();selectVaccineFromLookup('${escHtml(vid||'')}', this)">
+      <input type="checkbox" ${checked ? 'checked' : ''} ${!vid ? 'disabled' : ''}>
+      <div class="lookup-vax-info">
+        <span class="lookup-vax-name">${escHtml(nameJp)}</span>
+        ${note ? `<span class="lookup-vax-note">${escHtml(note)}</span>` : ''}
+      </div>
+      <span class="lookup-vax-level">${levelLabel}</span>
+    </label>`;
+  }
+
+  function sectionHeader(label, color, items, levelClass) {
+    if (!items || items.length === 0) return '';
+    const ids = items.map(v => nameToVaccineId(v.nameJp||v.name)).filter(Boolean);
+    const addAllBtn = ids.length
+      ? `<button class="lookup-add-all" onclick="event.stopPropagation();selectAllFromLookup([${ids.map(id=>`'${id}'`).join(',')}])">すべて追加</button>`
+      : '';
+    return `<div class="lookup-level-header" style="color:${color}">▶ ${label} ${addAllBtn}</div>`;
+  }
+
   // 表示
   let html = '<div class="lookup-results">';
 
-  // CDC結果
+  // ── CDC ──
   html += `<div class="lookup-source">
     <div class="lookup-source-title">🇺🇸 CDC Travel
-      <a href="${escHtml(cdcUrl)}" target="_blank" style="font-size:0.75rem;color:#1a56db;margin-left:4px">🔗 ${escHtml(cdcUrl)}</a>
+      <a href="${escHtml(cdcUrl)}" target="_blank" style="color:#1a56db">🔗 ${escHtml(cdcUrl)}</a>
     </div>`;
   if (cdcError) {
-    html += `<div class="lookup-error">⚠️ 取得できませんでした。<a href="${escHtml(cdcUrl)}" target="_blank" style="color:#1a56db">こちら</a>から直接ご確認ください。</div>`;
+    html += `<div class="lookup-error">⚠️ 取得できませんでした。<a href="${escHtml(cdcUrl)}" target="_blank" style="color:#1a56db">直接確認</a></div>`;
   } else if (!cdcData || (cdcData.recommended.length + cdcData.consider.length + cdcData.routine.length === 0)) {
-    html += `<div class="lookup-notfound">情報を解析できませんでした。<a href="${escHtml(cdcUrl)}" target="_blank" style="color:#1a56db">直接サイトで確認</a></div>`;
+    html += `<div class="lookup-notfound">解析できませんでした。<a href="${escHtml(cdcUrl)}" target="_blank" style="color:#1a56db">直接確認</a></div>`;
   } else {
     html += '<div class="lookup-vax-list">';
-    if (cdcData.recommended.length) {
-      html += `<div style="font-size:0.75rem;color:#856404;font-weight:700;margin:4px 0 2px">▶ 強く推奨</div>`;
-      cdcData.recommended.forEach(v => html += `<div class="lookup-vax-item lvl-recommended"><span class="lookup-vax-name">${escHtml(v)}</span><span class="lookup-vax-level">推奨</span></div>`);
-    }
-    if (cdcData.consider.length) {
-      html += `<div style="font-size:0.75rem;color:#c0392b;font-weight:700;margin:4px 0 2px">▶ 状況により推奨</div>`;
-      cdcData.consider.forEach(v => html += `<div class="lookup-vax-item lvl-consider"><span class="lookup-vax-name">${escHtml(v)}</span><span class="lookup-vax-level">条件付き</span></div>`);
-    }
-    if (cdcData.routine.length) {
-      html += `<div style="font-size:0.75rem;color:#555;font-weight:700;margin:4px 0 2px">▶ 定期（接種歴確認）</div>`;
-      cdcData.routine.forEach(v => html += `<div class="lookup-vax-item lvl-routine"><span class="lookup-vax-name">${escHtml(v)}</span><span class="lookup-vax-level">ルーチン</span></div>`);
-    }
+    html += sectionHeader('強く推奨', '#856404', cdcData.recommended, 'lvl-recommended');
+    cdcData.recommended.forEach(v => html += vaxItem(v.nameJp, v.note, 'lvl-recommended', '強く推奨'));
+    html += sectionHeader('状況により推奨', '#c0392b', cdcData.consider, 'lvl-consider');
+    cdcData.consider.forEach(v => html += vaxItem(v.nameJp, v.note, 'lvl-consider', '条件付き'));
+    html += sectionHeader('定期（接種歴確認）', '#555', cdcData.routine, 'lvl-routine');
+    cdcData.routine.forEach(v => html += vaxItem(v.nameJp, v.note, 'lvl-routine', 'ルーチン'));
     html += '</div>';
   }
   html += '</div>';
 
-  // FORTH結果
+  // ── FORTH ──
   html += `<div class="lookup-source">
     <div class="lookup-source-title">🇯🇵 FORTH（厚生労働省検疫所）
-      <a href="${escHtml(forthUrl)}" target="_blank" style="font-size:0.75rem;color:#1a6b3a;margin-left:4px">🔗 ${escHtml(forthUrl)}</a>
+      <a href="${escHtml(forthUrl)}" target="_blank" style="color:#1a6b3a">🔗 ${escHtml(forthUrl)}</a>
     </div>`;
   if (!c || !c.forth) {
-    html += `<div class="lookup-notfound">FORTHに該当ページが見つかりませんでした。<a href="https://www.forth.go.jp/destinations/index.html" target="_blank" style="color:#1a6b3a">一覧から検索</a></div>`;
+    html += `<div class="lookup-notfound">該当ページなし。<a href="https://www.forth.go.jp/destinations/index.html" target="_blank" style="color:#1a6b3a">一覧から検索</a></div>`;
   } else if (forthError) {
-    html += `<div class="lookup-error">⚠️ 取得できませんでした。<a href="${escHtml(forthUrl)}" target="_blank" style="color:#1a6b3a">こちら</a>から直接ご確認ください。</div>`;
+    html += `<div class="lookup-error">⚠️ 取得できませんでした。<a href="${escHtml(forthUrl)}" target="_blank" style="color:#1a6b3a">直接確認</a></div>`;
   } else if (!forthData || forthData.length === 0) {
-    html += `<div class="lookup-notfound">情報を解析できませんでした。<a href="${escHtml(forthUrl)}" target="_blank" style="color:#1a6b3a">直接サイトで確認</a></div>`;
+    html += `<div class="lookup-notfound">解析できませんでした。<a href="${escHtml(forthUrl)}" target="_blank" style="color:#1a6b3a">直接確認</a></div>`;
   } else {
     html += '<div class="lookup-vax-list">';
-    html += `<div style="font-size:0.75rem;color:#1a6b3a;font-weight:700;margin:4px 0 2px">▶ 推奨・持参薬</div>`;
-    forthData.forEach(v => html += `<div class="lookup-vax-item lvl-recommended"><span class="lookup-vax-name">${escHtml(v)}</span></div>`);
+    html += sectionHeader('推奨', '#1a6b3a', forthData, 'lvl-recommended');
+    forthData.forEach(v => html += vaxItem(v.name, v.note, 'lvl-recommended', '推奨'));
     html += '</div>';
   }
   html += '</div></div>';
@@ -1470,6 +1548,55 @@ async function lookupVaccines() {
   resultEl.innerHTML = html;
   btn.disabled = false;
   btn.textContent = '🔄 再取得';
+}
+
+// ルックアップ結果からワクチンを個別選択
+function selectVaccineFromLookup(vid, labelEl) {
+  if (!vid || !currentId) return;
+  const p = patients[currentId];
+  const arr = p.selectedVaccines || [];
+  const idx = arr.indexOf(vid);
+  const cb = labelEl.querySelector('input[type="checkbox"]');
+  if (idx >= 0) {
+    arr.splice(idx, 1);
+    labelEl.classList.remove('selected');
+    if (cb) cb.checked = false;
+  } else {
+    arr.push(vid);
+    labelEl.classList.add('selected');
+    if (cb) cb.checked = true;
+  }
+  p.selectedVaccines = arr;
+  save();
+  // ワクチン選択グリッドの対応チェックボックスも同期
+  const gridCb = document.querySelector(`.vax-item input[onchange*="'${vid}'"]`);
+  if (gridCb) {
+    gridCb.checked = idx < 0;
+    gridCb.closest('.vax-item').classList.toggle('selected', idx < 0);
+  }
+}
+
+// 一括追加
+function selectAllFromLookup(vids) {
+  if (!currentId) return;
+  const p = patients[currentId];
+  const arr = p.selectedVaccines || [];
+  vids.forEach(vid => { if (!arr.includes(vid)) arr.push(vid); });
+  p.selectedVaccines = arr;
+  save();
+  // UIを再描画して同期
+  const resultEl = document.getElementById('lookup-result');
+  if (resultEl) {
+    resultEl.querySelectorAll('.lookup-vax-item').forEach(label => {
+      const cb = label.querySelector('input[type="checkbox"]');
+      if (cb && !cb.disabled) { cb.checked = true; label.classList.add('selected'); }
+    });
+  }
+  // ワクチン選択グリッドも同期
+  vids.forEach(vid => {
+    const gridCb = document.querySelector(`.vax-item input[onchange*="'${vid}'"]`);
+    if (gridCb) { gridCb.checked = true; gridCb.closest('.vax-item').classList.add('selected'); }
+  });
 }
 
 // =============================================
