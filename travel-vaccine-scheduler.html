@@ -537,8 +537,8 @@ const VACCINE_CATEGORIES = [
     category: 'ルーチン（接種歴確認・追加接種の検討）',
     vaccines: [
       {
-        id: 'mmr',
-        name: 'MMR（麻しん・風しん・おたふく）',
+        id: 'mr',
+        name: 'MR（麻しん・風しん）',
         badge: 'required',
         badgeLabel: '推奨',
         doses: [
@@ -546,6 +546,17 @@ const VACCINE_CATEGORIES = [
           { num: 2, label: '②', dayOffset: 28, note: '①から4週以上あける（計2回）' }
         ],
         note: '1978年以前生まれや接種歴不明の場合に要確認'
+      },
+      {
+        id: 'mumps',
+        name: 'おたふくかぜ（ムンプス）',
+        badge: 'optional',
+        badgeLabel: '推奨',
+        doses: [
+          { num: 1, label: '①', dayOffset: 0,  note: '未接種・抗体不十分な場合' },
+          { num: 2, label: '②', dayOffset: 28, note: '①から4週以上あける（計2回）' }
+        ],
+        note: '接種歴・抗体価を確認の上、未接種の場合に推奨'
       },
       {
         id: 'varicella',
