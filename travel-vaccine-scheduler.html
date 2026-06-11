@@ -368,6 +368,7 @@
     .lookup-source-bar { display: flex; gap: 16px; padding: 8px 0 4px; font-size: 0.82rem; color: #555; flex-wrap: wrap; }
     .lookup-source-bar a { color: #1a56db; text-decoration: none; }
     .lookup-source-bar a:hover { text-decoration: underline; }
+    .gt-link { margin-left: 6px; background: #f0f4ff; border: 1px solid #c7d2fe; border-radius: 4px; padding: 1px 6px; font-size: 0.75rem; color: #3730a3 !important; white-space: nowrap; }
     .forth-badge { display: inline-block; font-size: 0.68rem; background: #e8f5e9; color: #1a6b3a; border: 1px solid #a5d6a7; border-radius: 4px; padding: 1px 5px; vertical-align: middle; margin-left: 4px; white-space: nowrap; }
     .forth-note { color: #1a6b3a !important; border-left: 2px solid #a5d6a7; padding-left: 5px; margin-top: 2px; }
     .note-expand-btn { background: none; border: none; color: #1a6b3a; font-size: 0.7rem; cursor: pointer; padding: 0 3px; text-decoration: underline; vertical-align: baseline; }
@@ -1555,24 +1556,28 @@ function renderLookupHtml(cache, resultEl) {
     const forthBadge = forthItem ? `<span class="forth-badge">🇯🇵 FORTH推奨</span>` : '';
     const forthNoteText = forthItem && forthItem.note ? forthItem.note : '';
 
-    function noteHtml(txt, extraClass) {
+    function noteHtml(txt, extraClass, isEng) {
       if (!txt) return '';
-      const LIMIT = 60;
+      const LIMIT = 120;
+      const lang = isEng ? ' lang="en"' : '';
       const short = txt.length > LIMIT ? txt.slice(0, LIMIT - 1) + '…' : txt;
       const needsExpand = txt.length > LIMIT;
-      if (!needsExpand) return `<span class="lookup-vax-note${extraClass ? ' ' + extraClass : ''}">${escHtml(txt)}</span>`;
-      return `<span class="lookup-vax-note${extraClass ? ' ' + extraClass : ''} note-collapsible">
+      if (!needsExpand) return `<span class="lookup-vax-note${extraClass ? ' ' + extraClass : ''}"${lang}>${escHtml(txt)}</span>`;
+      return `<span class="lookup-vax-note${extraClass ? ' ' + extraClass : ''} note-collapsible"${lang}>
         <span class="note-short">${escHtml(short)}<button class="note-expand-btn" tabindex="-1">もっと見る</button></span>
         <span class="note-full" hidden>${escHtml(txt)}<button class="note-expand-btn" tabindex="-1">閉じる</button></span>
       </span>`;
     }
 
+    const forthNoteHtml = forthNoteText ? noteHtml('🇯🇵 ' + forthNoteText, 'forth-note', false) : '';
+    const cdcNoteDisplay = cdcNote ? noteHtml(cdcNote, '', true) : '';
+
     return `<label class="lookup-vax-item ${levelClass}${checked ? ' selected' : ''}"${noId}${title}>
       <input type="checkbox" data-vid="${escHtml(vid||'')}" ${checked ? 'checked' : ''} ${!vid ? 'disabled' : ''}>
       <div class="lookup-vax-info">
         <span class="lookup-vax-name">${escHtml(nameJp)} ${forthBadge}</span>
-        ${noteHtml(cdcNoteJp, '')}
-        ${forthNoteText ? noteHtml('🇯🇵 ' + forthNoteText, 'forth-note') : ''}
+        ${cdcNoteDisplay}
+        ${forthNoteHtml}
       </div>
       <span class="lookup-vax-level">${levelLabel}</span>
     </label>`;
@@ -1591,8 +1596,11 @@ function renderLookupHtml(cache, resultEl) {
   const forthVidsSeen = new Set();
   let html = '<div class="lookup-results">';
 
+  const gtCdcUrl = `https://translate.google.com/translate?sl=en&tl=ja&u=${encodeURIComponent(cdcUrl)}`;
   html += `<div class="lookup-source-bar">
-    <span>🇺🇸 <a href="${escHtml(cdcUrl)}" target="_blank">CDC Travel</a></span>`;
+    <span>🇺🇸 <a href="${escHtml(cdcUrl)}" target="_blank">CDC Travel</a>
+      <a href="${escHtml(gtCdcUrl)}" target="_blank" class="gt-link" title="CDCページをGoogle翻訳で日本語表示">🌐 日本語で読む</a>
+    </span>`;
   if (hasForth) {
     html += `<span>🇯🇵 <a href="${escHtml(forthUrl)}" target="_blank">FORTH（厚生労働省）</a></span>`;
   }
