@@ -131,8 +131,15 @@
       align-items: center;
       justify-content: space-between;
       gap: 8px;
+      cursor: pointer;
+      user-select: none;
     }
-    .section-header h2 { font-size: 1rem; color: #1a6b3a; }
+    .section-header:hover { background: #f5faf7; }
+    .section-header h2 { font-size: 1rem; color: #1a6b3a; flex: 1; }
+    .section-toggle { font-size: 0.85rem; color: #888; transition: transform 0.2s; flex-shrink: 0; }
+    .section-toggle.collapsed { transform: rotate(-90deg); }
+    .section-body { transition: none; }
+    .section-body.collapsed { display: none; }
 
     /* ── Vaccine selector ── */
     .vaccine-selector {
@@ -358,6 +365,11 @@
       display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
     }
     .lookup-source-title a { font-size: 0.75rem; font-weight: normal; }
+    .lookup-source-bar { display: flex; gap: 16px; padding: 8px 0 4px; font-size: 0.82rem; color: #555; flex-wrap: wrap; }
+    .lookup-source-bar a { color: #1a56db; text-decoration: none; }
+    .lookup-source-bar a:hover { text-decoration: underline; }
+    .forth-badge { display: inline-block; font-size: 0.68rem; background: #e8f5e9; color: #1a6b3a; border: 1px solid #a5d6a7; border-radius: 4px; padding: 1px 5px; vertical-align: middle; margin-left: 4px; white-space: nowrap; }
+    .forth-note { color: #1a6b3a !important; border-left: 2px solid #a5d6a7; padding-left: 5px; margin-top: 2px; }
     .lookup-vax-list { display: flex; flex-direction: column; gap: 5px; }
     .lookup-vax-item {
       display: grid;
@@ -934,65 +946,85 @@ function renderMain() {
 
     <!-- Vaccine lookup -->
     <div class="lookup-card" id="lookup-card">
-      <div class="section-header">
+      <div class="section-header" data-section="lookup">
         <h2>🔍 渡航先の推奨ワクチンを調べる</h2>
+        <span class="section-toggle" id="section-toggle-lookup">▼</span>
       </div>
-      <div class="lookup-body">
-        <div class="lookup-dest-row">
-          <span>渡航先：${p.destination ? escHtml(p.destination) : '（患者情報に渡航先を入力してください）'}</span>
-          ${p.destination ? `<button class="btn-lookup" id="btn-lookup" onclick="lookupVaccines()">🌐 CDC / FORTH から取得</button>` : ''}
+      <div class="section-body" id="section-body-lookup">
+        <div class="lookup-body">
+          <div class="lookup-dest-row">
+            <span>渡航先：${p.destination ? escHtml(p.destination) : '（患者情報に渡航先を入力してください）'}</span>
+            ${p.destination ? `<button class="btn-lookup" id="btn-lookup" onclick="lookupVaccines()">🌐 CDC / FORTH から取得</button>` : ''}
+          </div>
+          ${p.destination ? `
+          <div class="lookup-links">
+            <a class="lookup-link lookup-link-cdc" href="${buildCdcUrl(p.destination)}" target="_blank" id="cdc-link">🇺🇸 CDC Travel</a>
+            <a class="lookup-link lookup-link-forth" href="${buildForthUrl(p.destination)}" target="_blank" id="forth-link">🇯🇵 FORTH（厚生労働省）</a>
+          </div>` : ''}
+          <div id="lookup-result"></div>
         </div>
-        ${p.destination ? `
-        <div class="lookup-links">
-          <a class="lookup-link lookup-link-cdc" href="${buildCdcUrl(p.destination)}" target="_blank" id="cdc-link">🇺🇸 CDC Travel</a>
-          <a class="lookup-link lookup-link-forth" href="${buildForthUrl(p.destination)}" target="_blank" id="forth-link">🇯🇵 FORTH（厚生労働省）</a>
-        </div>` : ''}
-        <div id="lookup-result"></div>
       </div>
     </div>
 
     <!-- Vaccine selector -->
     <div class="section-card">
-      <div class="section-header">
+      <div class="section-header" data-section="selector">
         <h2>💉 ワクチンを選択・初回接種日を設定</h2>
+        <span class="section-toggle" id="section-toggle-selector">▼</span>
       </div>
-      <div class="vaccine-selector">
-        <div class="date-row">
-          <label>初回接種予定日：</label>
-          <input type="date" id="first-dose-date" value="${escHtml(p.firstDoseDate || toInputDate(new Date()))}"
-            onchange="onFirstDateChange(this.value)">
-        </div>
-        ${VACCINE_CATEGORIES.map(cat => `
-          <div class="vax-category">${escHtml(cat.category)}</div>
-          <div class="vaccine-grid">
-            ${cat.vaccines.map(v => {
-              const checked = (p.selectedVaccines || []).includes(v.id);
-              return `<label class="vax-item${checked ? ' selected' : ''}">
-                <input type="checkbox" ${checked ? 'checked' : ''} onchange="toggleVaccine('${escHtml(v.id)}',this.closest('.vax-item'),this.checked)">
-                <div class="vax-item-text">
-                  <div class="vax-item-name">${escHtml(v.name)}</div>
-                  <div class="vax-item-detail">${v.doses.length}回接種 · ${escHtml(v.note)}</div>
-                </div>
-              </label>`;
-            }).join('')}
+      <div class="section-body" id="section-body-selector">
+        <div class="vaccine-selector">
+          <div class="date-row">
+            <label>初回接種予定日：</label>
+            <input type="date" id="first-dose-date" value="${escHtml(p.firstDoseDate || toInputDate(new Date()))}"
+              onchange="onFirstDateChange(this.value)">
           </div>
-        `).join('')}
-        <button class="btn-generate" onclick="generateSchedule()">📅 スケジュールを生成</button>
+          ${VACCINE_CATEGORIES.map(cat => `
+            <div class="vax-category">${escHtml(cat.category)}</div>
+            <div class="vaccine-grid">
+              ${cat.vaccines.map(v => {
+                const checked = (p.selectedVaccines || []).includes(v.id);
+                return `<label class="vax-item${checked ? ' selected' : ''}">
+                  <input type="checkbox" ${checked ? 'checked' : ''} onchange="toggleVaccine('${escHtml(v.id)}',this.closest('.vax-item'),this.checked)">
+                  <div class="vax-item-text">
+                    <div class="vax-item-name">${escHtml(v.name)}</div>
+                    <div class="vax-item-detail">${v.doses.length}回接種 · ${escHtml(v.note)}</div>
+                  </div>
+                </label>`;
+              }).join('')}
+            </div>
+          `).join('')}
+          <button class="btn-generate" onclick="generateSchedule()">📅 スケジュールを生成</button>
+        </div>
       </div>
     </div>
 
     <!-- Schedule -->
     <div class="section-card" id="schedule-card" style="display:none">
-      <div class="section-header" id="schedule-card-header">
+      <div class="section-header" data-section="schedule" id="schedule-card-header">
         <h2>📋 推奨接種スケジュール</h2>
         <div style="display:flex;gap:8px;align-items:center">
-          <button class="btn-sm" onclick="window.print()">🖨 印刷</button>
+          <button class="btn-sm btn-print">🖨 印刷</button>
           <span class="print-hint">渡航前の接種完了を目指してください</span>
+          <span class="section-toggle" id="section-toggle-schedule">▼</span>
         </div>
       </div>
-      <div id="schedule-body"></div>
+      <div class="section-body" id="section-body-schedule">
+        <div id="schedule-body"></div>
+      </div>
     </div>
   `;
+
+  // セクションヘッダーのアコーディオンリスナー登録
+  main.querySelectorAll('.section-header[data-section]').forEach(header => {
+    header.addEventListener('click', function(e) {
+      if (e.target.closest('button')) return; // ボタンはスルー
+      toggleSection(this.dataset.section);
+    });
+  });
+  // 印刷ボタン
+  const printBtn = main.querySelector('.btn-print');
+  if (printBtn) printBtn.addEventListener('click', () => window.print());
 
   // 既存スケジュールがあれば再描画
   if ((p.selectedVaccines || []).length > 0) {
@@ -1477,102 +1509,219 @@ async function lookupVaccines() {
   const p2 = patients[currentId]; // 最新の選択状態を取得
   const sel = new Set(p2.selectedVaccines || []);
 
-  function vaxItem(nameJp, note, levelClass, levelLabel) {
+  // CDC名→FORTHデータのマップを作成（FORTH名→CDCと同じvid経由でマッチング）
+  function buildForthMap(forthList) {
+    const map = new Map(); // vid → forthItem
+    if (!forthList) return map;
+    forthList.forEach(fv => {
+      const vid = nameToVaccineId(fv.name);
+      if (vid) map.set(vid, fv);
+    });
+    return map;
+  }
+
+  function vaxItem(nameJp, cdcNote, levelClass, levelLabel, forthItem) {
     const vid = nameToVaccineId(nameJp);
     const checked = vid && sel.has(vid);
     const noId = !vid ? ' style="opacity:0.6"' : '';
     const title = vid ? '' : ' title="このアプリにワクチン定義がありません"';
-    return `<label class="lookup-vax-item ${levelClass}${checked ? ' selected' : ''}"${noId}${title}
-        onclick="event.preventDefault();selectVaccineFromLookup('${escHtml(vid||'')}', this)">
-      <input type="checkbox" ${checked ? 'checked' : ''} ${!vid ? 'disabled' : ''}>
+    const cdcNoteJp = translateCdcNote(cdcNote);
+    const forthBadge = forthItem
+      ? `<span class="forth-badge">🇯🇵 FORTH推奨</span>`
+      : '';
+    const forthNote = forthItem && forthItem.note
+      ? `<span class="lookup-vax-note forth-note">🇯🇵 ${escHtml(forthItem.note)}</span>`
+      : '';
+    return `<label class="lookup-vax-item ${levelClass}${checked ? ' selected' : ''}"${noId}${title}>
+      <input type="checkbox" data-vid="${escHtml(vid||'')}" ${checked ? 'checked' : ''} ${!vid ? 'disabled' : ''}>
       <div class="lookup-vax-info">
-        <span class="lookup-vax-name">${escHtml(nameJp)}</span>
-        ${note ? `<span class="lookup-vax-note">${escHtml(note)}</span>` : ''}
+        <span class="lookup-vax-name">${escHtml(nameJp)} ${forthBadge}</span>
+        ${cdcNoteJp ? `<span class="lookup-vax-note">${escHtml(cdcNoteJp)}</span>` : ''}
+        ${forthNote}
       </div>
       <span class="lookup-vax-level">${levelLabel}</span>
     </label>`;
   }
 
-  function sectionHeader(label, color, items, levelClass) {
+  function sectionHeader(label, color, items) {
     if (!items || items.length === 0) return '';
     const ids = items.map(v => nameToVaccineId(v.nameJp||v.name)).filter(Boolean);
     const addAllBtn = ids.length
-      ? `<button class="lookup-add-all" onclick="event.stopPropagation();selectAllFromLookup([${ids.map(id=>`'${id}'`).join(',')}])">すべて追加</button>`
+      ? `<button class="lookup-add-all" data-addall="${escHtml(JSON.stringify(ids))}">すべて追加</button>`
       : '';
     return `<div class="lookup-level-header" style="color:${color}">▶ ${label} ${addAllBtn}</div>`;
   }
 
+  // ── FORTHマップ作成 ──
+  const forthMap = buildForthMap(forthData);
+  const forthVidsSeen = new Set();
+
   // 表示
   let html = '<div class="lookup-results">';
 
-  // ── CDC ──
-  html += `<div class="lookup-source">
-    <div class="lookup-source-title">🇺🇸 CDC Travel
-      <a href="${escHtml(cdcUrl)}" target="_blank" style="color:#1a56db">🔗 ${escHtml(cdcUrl)}</a>
-    </div>`;
-  if (cdcError) {
-    html += `<div class="lookup-error">⚠️ 取得できませんでした。<a href="${escHtml(cdcUrl)}" target="_blank" style="color:#1a56db">直接確認</a></div>`;
-  } else if (!cdcData || (cdcData.recommended.length + cdcData.consider.length + cdcData.routine.length === 0)) {
-    html += `<div class="lookup-notfound">解析できませんでした。<a href="${escHtml(cdcUrl)}" target="_blank" style="color:#1a56db">直接確認</a></div>`;
-  } else {
-    html += '<div class="lookup-vax-list">';
-    html += sectionHeader('強く推奨', '#856404', cdcData.recommended, 'lvl-recommended');
-    cdcData.recommended.forEach(v => html += vaxItem(v.nameJp, v.note, 'lvl-recommended', '強く推奨'));
-    html += sectionHeader('状況により推奨', '#c0392b', cdcData.consider, 'lvl-consider');
-    cdcData.consider.forEach(v => html += vaxItem(v.nameJp, v.note, 'lvl-consider', '条件付き'));
-    html += sectionHeader('定期（接種歴確認）', '#555', cdcData.routine, 'lvl-routine');
-    cdcData.routine.forEach(v => html += vaxItem(v.nameJp, v.note, 'lvl-routine', 'ルーチン'));
-    html += '</div>';
+  // ── ソース行 ──
+  html += `<div class="lookup-source-bar">
+    <span>🇺🇸 <a href="${escHtml(cdcUrl)}" target="_blank">CDC Travel</a></span>`;
+  if (c && c.forth) {
+    html += `<span>🇯🇵 <a href="${escHtml(forthUrl)}" target="_blank">FORTH（厚生労働省）</a></span>`;
   }
-  html += '</div>';
+  html += `</div>`;
 
-  // ── FORTH ──
-  html += `<div class="lookup-source">
-    <div class="lookup-source-title">🇯🇵 FORTH（厚生労働省検疫所）
-      <a href="${escHtml(forthUrl)}" target="_blank" style="color:#1a6b3a">🔗 ${escHtml(forthUrl)}</a>
-    </div>`;
-  if (!c || !c.forth) {
-    html += `<div class="lookup-notfound">該当ページなし。<a href="https://www.forth.go.jp/destinations/index.html" target="_blank" style="color:#1a6b3a">一覧から検索</a></div>`;
-  } else if (forthError) {
-    html += `<div class="lookup-error">⚠️ 取得できませんでした。<a href="${escHtml(forthUrl)}" target="_blank" style="color:#1a6b3a">直接確認</a></div>`;
-  } else if (!forthData || forthData.length === 0) {
-    html += `<div class="lookup-notfound">解析できませんでした。<a href="${escHtml(forthUrl)}" target="_blank" style="color:#1a6b3a">直接確認</a></div>`;
+  // ── CDC + FORTH統合リスト ──
+  if (cdcError) {
+    html += `<div class="lookup-error">⚠️ CDC情報を取得できませんでした。<a href="${escHtml(cdcUrl)}" target="_blank" style="color:#1a56db">直接確認</a></div>`;
+  } else if (!cdcData || (cdcData.recommended.length + cdcData.consider.length + cdcData.routine.length === 0)) {
+    html += `<div class="lookup-notfound">CDCを解析できませんでした。<a href="${escHtml(cdcUrl)}" target="_blank" style="color:#1a56db">直接確認</a></div>`;
   } else {
     html += '<div class="lookup-vax-list">';
-    html += sectionHeader('推奨', '#1a6b3a', forthData, 'lvl-recommended');
-    forthData.forEach(v => html += vaxItem(v.name, v.note, 'lvl-recommended', '推奨'));
+    // 強く推奨
+    if (cdcData.recommended.length > 0) {
+      html += sectionHeader('強く推奨', '#856404', cdcData.recommended);
+      cdcData.recommended.forEach(v => {
+        const vid = nameToVaccineId(v.nameJp);
+        const fi = vid && forthMap.has(vid) ? forthMap.get(vid) : null;
+        if (fi) forthVidsSeen.add(vid);
+        html += vaxItem(v.nameJp, v.note, 'lvl-recommended', '強く推奨', fi);
+      });
+    }
+    // 状況により推奨
+    if (cdcData.consider.length > 0) {
+      html += sectionHeader('状況により推奨', '#c0392b', cdcData.consider);
+      cdcData.consider.forEach(v => {
+        const vid = nameToVaccineId(v.nameJp);
+        const fi = vid && forthMap.has(vid) ? forthMap.get(vid) : null;
+        if (fi) forthVidsSeen.add(vid);
+        html += vaxItem(v.nameJp, v.note, 'lvl-consider', '条件付き', fi);
+      });
+    }
+    // ルーチン
+    if (cdcData.routine.length > 0) {
+      html += sectionHeader('定期（接種歴確認）', '#555', cdcData.routine);
+      cdcData.routine.forEach(v => {
+        const vid = nameToVaccineId(v.nameJp);
+        const fi = vid && forthMap.has(vid) ? forthMap.get(vid) : null;
+        if (fi) forthVidsSeen.add(vid);
+        html += vaxItem(v.nameJp, v.note, 'lvl-routine', 'ルーチン', fi);
+      });
+    }
+    // FORTHのみのワクチン（CDCにない）
+    if (forthData && forthData.length > 0) {
+      const forthOnly = forthData.filter(fv => {
+        const vid = nameToVaccineId(fv.name);
+        return !vid || !forthVidsSeen.has(vid);
+      });
+      if (forthOnly.length > 0) {
+        html += sectionHeader('🇯🇵 FORTHのみ推奨', '#1a6b3a', forthOnly);
+        forthOnly.forEach(fv => {
+          html += vaxItem(fv.name, '', 'lvl-recommended', 'FORTH推奨', fv);
+        });
+      }
+    }
     html += '</div>';
   }
-  html += '</div></div>';
+
+  // FORTHエラー表示（取得できなかった場合のみ）
+  if (c && c.forth && forthError) {
+    html += `<div class="lookup-error" style="margin-top:6px">⚠️ FORTH情報を取得できませんでした。<a href="${escHtml(forthUrl)}" target="_blank" style="color:#1a6b3a">直接確認</a></div>`;
+  }
+
+  html += '</div>';
 
   resultEl.innerHTML = html;
   btn.disabled = false;
   btn.textContent = '🔄 再取得';
+
+  // イベント委譲：チェックボックスとすべて追加ボタン
+  resultEl.addEventListener('change', function(e) {
+    const cb = e.target;
+    if (cb.type !== 'checkbox' || cb.disabled) return;
+    const vid = cb.dataset.vid;
+    const labelEl = cb.closest('.lookup-vax-item');
+    if (vid) selectVaccineFromLookup(vid, cb.checked, labelEl);
+  });
+  resultEl.addEventListener('click', function(e) {
+    const btn2 = e.target.closest('.lookup-add-all');
+    if (!btn2) return;
+    e.stopPropagation();
+    try { selectAllFromLookup(JSON.parse(btn2.dataset.addall)); } catch(err) {}
+  });
+}
+
+// CDC推奨テキストを日本語に変換
+function translateCdcNote(text) {
+  if (!text) return '';
+  // すでに日本語ならそのまま返す
+  if (/[぀-ヿ一-鿿]/.test(text)) return text;
+  const t = text.trim();
+  let result = t;
+  result = result.replace(/Recommended for unvaccinated travelers/gi, '未接種の渡航者に推奨');
+  result = result.replace(/recommended for unvaccinated/gi, '未接種者に推奨');
+  result = result.replace(/Recommended for most travelers/gi, 'ほとんどの渡航者に推奨');
+  result = result.replace(/Recommended for all travelers/gi, '全ての渡航者に推奨');
+  result = result.replace(/Recommended for travelers going to/gi, '渡航先に行く渡航者に推奨：');
+  result = result.replace(/Recommended for travelers/gi, '渡航者に推奨');
+  result = result.replace(/Consider for travelers/gi, '渡航者への検討を推奨');
+  result = result.replace(/Consider for some travelers/gi, '一部の渡航者への検討を推奨');
+  result = result.replace(/one year old or older/gi, '1歳以上');
+  result = result.replace(/(\d+) years? of age or older/gi, '$1歳以上');
+  result = result.replace(/(\d+) years? old or older/gi, '$1歳以上');
+  result = result.replace(/who are not up-to-date/gi, '接種が未完了の方');
+  result = result.replace(/who are not vaccinated/gi, '未接種の方');
+  result = result.replace(/going to rural areas?/gi, '農村部へ行く方');
+  result = result.replace(/visiting rural areas?/gi, '農村部を訪問する方');
+  result = result.replace(/during extended travel/gi, '長期渡航の場合');
+  result = result.replace(/for extended stays?/gi, '長期滞在の場合');
+  result = result.replace(/for prolonged stays?/gi, '長期滞在の場合');
+  result = result.replace(/if not previously vaccinated/gi, '過去に接種していない場合');
+  result = result.replace(/if unvaccinated/gi, '未接種の場合');
+  result = result.replace(/who have not been vaccinated/gi, '接種を受けていない方');
+  result = result.replace(/through food and water/gi, '食物・水から感染');
+  result = result.replace(/through contaminated food and water/gi, '汚染された食物・水から感染');
+  result = result.replace(/spread through/gi, '感染経路：');
+  result = result.replace(/due to increased risk/gi, 'リスク上昇のため');
+  result = result.replace(/high-risk areas?/gi, '高リスク地域');
+  result = result.replace(/outbreak areas?/gi, 'アウトブレイク地域');
+  result = result.replace(/endemic areas?/gi, '流行地域');
+  result = result.replace(/\bor\b/g, 'または');
+  result = result.replace(/\band\b/g, 'および');
+  result = result.replace(/\bthe\b/gi, '');
+  result = result.replace(/  +/g, ' ').trim();
+  // 全て英語のままなら括弧で添える
+  if (!/[぀-ヿ一-鿿]/.test(result) && result.length > 0) {
+    return result;
+  }
+  return result;
+}
+
+// セクションのアコーディオン開閉
+function toggleSection(id) {
+  const body = document.getElementById('section-body-' + id);
+  const toggle = document.getElementById('section-toggle-' + id);
+  if (!body) return;
+  const collapsed = body.classList.toggle('collapsed');
+  if (toggle) toggle.classList.toggle('collapsed', collapsed);
 }
 
 // ルックアップ結果からワクチンを個別選択
-function selectVaccineFromLookup(vid, labelEl) {
+function selectVaccineFromLookup(vid, checked, labelEl) {
   if (!vid || !currentId) return;
   const p = patients[currentId];
   const arr = p.selectedVaccines || [];
   const idx = arr.indexOf(vid);
-  const cb = labelEl.querySelector('input[type="checkbox"]');
-  if (idx >= 0) {
-    arr.splice(idx, 1);
-    labelEl.classList.remove('selected');
-    if (cb) cb.checked = false;
-  } else {
-    arr.push(vid);
+  if (checked) {
+    if (idx < 0) arr.push(vid);
     labelEl.classList.add('selected');
-    if (cb) cb.checked = true;
+  } else {
+    if (idx >= 0) arr.splice(idx, 1);
+    labelEl.classList.remove('selected');
   }
   p.selectedVaccines = arr;
   save();
   // ワクチン選択グリッドの対応チェックボックスも同期
   const gridCb = document.querySelector(`.vax-item input[onchange*="'${vid}'"]`);
   if (gridCb) {
-    gridCb.checked = idx < 0;
-    gridCb.closest('.vax-item').classList.toggle('selected', idx < 0);
+    gridCb.checked = checked;
+    gridCb.closest('.vax-item').classList.toggle('selected', checked);
   }
 }
 
