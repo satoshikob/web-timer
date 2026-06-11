@@ -441,7 +441,8 @@ const VACCINE_CATEGORIES = [
         badgeLabel: '強く推奨',
         doses: [
           { num: 1, label: '①', dayOffset: 0,   note: '初回' },
-          { num: 2, label: '②', dayOffset: 180,  note: '①から6〜12か月後（長期免疫）' }
+          { num: 2, label: '②', dayOffset: 28,  note: '①から2〜4週後' },
+          { num: 3, label: '③', dayOffset: 180, note: '①から24週（6か月）後（長期免疫）' }
         ],
         note: '発展途上国全般に推奨。1回でも短期効果あり'
       },
@@ -453,7 +454,7 @@ const VACCINE_CATEGORIES = [
         doses: [
           { num: 1, label: '①', dayOffset: 0,  note: '初回' },
           { num: 2, label: '②', dayOffset: 30, note: '①から1か月後' },
-          { num: 3, label: '③', dayOffset: 180, note: '①から6か月後' }
+          { num: 3, label: '③', dayOffset: 140, note: '①から20週（約5か月）後' }
         ],
         altSchedules: [
           { label: '加速（0・7・21日）', offsets: [0, 7, 21], boosterDays: 365 }
@@ -481,8 +482,9 @@ const VACCINE_CATEGORIES = [
         badge: 'optional',
         badgeLabel: '状況により推奨',
         doses: [
-          { num: 1, label: '①', dayOffset: 0,  note: '初回' },
-          { num: 2, label: '②', dayOffset: 28, note: '①から28日後（基礎免疫完了）' }
+          { num: 1, label: '①', dayOffset: 0,   note: '初回' },
+          { num: 2, label: '②', dayOffset: 28,  note: '①から7〜28日後' },
+          { num: 3, label: '③', dayOffset: 365, note: '①から1年後（基礎免疫完了）' }
         ],
         note: 'アジア農村部・田園地帯への長期滞在（4週以上）や屋外活動に推奨'
       },
@@ -504,9 +506,10 @@ const VACCINE_CATEGORIES = [
         badge: 'optional',
         badgeLabel: '状況により推奨',
         doses: [
-          { num: 1, label: '①', dayOffset: 0, note: '1回（5年間有効）' }
+          { num: 1, label: '①', dayOffset: 0,  note: '初回（5年間有効）' },
+          { num: 2, label: '②', dayOffset: 56, note: '①から8週後（ハイリスク例のみ）' }
         ],
-        note: 'サハラ以南アフリカ（髄膜炎ベルト）・サウジアラビア（ハッジ巡礼）は入国要件の場合あり'
+        note: 'サハラ以南アフリカ（髄膜炎ベルト）・サウジアラビア（ハッジ巡礼）は入国要件の場合あり。通常1回、高リスクは2回'
       },
       {
         id: 'cholera',
@@ -527,7 +530,7 @@ const VACCINE_CATEGORIES = [
         doses: [
           { num: 1, label: '①', dayOffset: 0,  note: '初回' },
           { num: 2, label: '②', dayOffset: 30, note: '①から1〜3か月後' },
-          { num: 3, label: '③', dayOffset: 270, note: '②から5〜12か月後' }
+          { num: 3, label: '③', dayOffset: 180, note: '①から6か月後' }
         ],
         note: '中央ヨーロッパ・ロシア・北海道の森林地帯でのアウトドア活動'
       },
@@ -607,7 +610,7 @@ const VACCINE_CATEGORIES = [
         doses: [
           { num: 1, label: '①', dayOffset: 0,   note: '基礎免疫なし：初回' },
           { num: 2, label: '②', dayOffset: 28,  note: '①から4週後' },
-          { num: 3, label: '③', dayOffset: 180, note: '①から6か月後（基礎免疫完了）' }
+          { num: 3, label: '③', dayOffset: 365, note: '①から1年後（基礎免疫完了）' }
         ],
         note: '基礎免疫あり（接種歴10年以内）なら追加1回のみ。土壌・動物・外傷リスクがある渡航に必須'
       },
@@ -634,7 +637,7 @@ const VACCINE_CATEGORIES = [
         doses: [
           { num: 1, label: '①', dayOffset: 0, note: '1回（18歳以上・Ixchiq）' }
         ],
-        note: 'アフリカ・アジア・中南米・カリブ海諸国への渡航（18歳以上が対象）'
+        note: 'アフリカ・アジア・中南米・カリブ海諸国への渡航（18歳以上）。⚠️ 日本国内未承認・輸入ワクチンなし（2026年2月現在）'
       },
     ]
   }
