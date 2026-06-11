@@ -370,6 +370,8 @@
     .lookup-source-bar a:hover { text-decoration: underline; }
     .forth-badge { display: inline-block; font-size: 0.68rem; background: #e8f5e9; color: #1a6b3a; border: 1px solid #a5d6a7; border-radius: 4px; padding: 1px 5px; vertical-align: middle; margin-left: 4px; white-space: nowrap; }
     .forth-note { color: #1a6b3a !important; border-left: 2px solid #a5d6a7; padding-left: 5px; margin-top: 2px; }
+    .note-expand-btn { background: none; border: none; color: #1a6b3a; font-size: 0.7rem; cursor: pointer; padding: 0 3px; text-decoration: underline; vertical-align: baseline; }
+    .note-expand-btn:hover { color: #0d4a26; }
     .lookup-vax-list { display: flex; flex-direction: column; gap: 5px; }
     .lookup-vax-item {
       display: grid;
@@ -1407,7 +1409,7 @@ function parseCDC(html) {
     const jpName = cdcNameToJp(rawName);
     if (!jpName) return;
     // 推奨テキスト（2列目）
-    const note = tds[1] ? tds[1].textContent.replace(/\s+/g, ' ').trim().slice(0, 180) : '';
+    const note = tds[1] ? tds[1].textContent.replace(/\s+/g, ' ').trim().slice(0, 600) : '';
     const already = result[currentLevel].some(x => x.nameJp === jpName);
     if (!already) result[currentLevel].push({ nameJp: jpName, note });
   });
@@ -1545,15 +1547,26 @@ function renderLookupHtml(cache, resultEl) {
     const title = vid ? '' : ' title="このアプリにワクチン定義がありません"';
     const cdcNoteJp = translateCdcNote(cdcNote);
     const forthBadge = forthItem ? `<span class="forth-badge">🇯🇵 FORTH推奨</span>` : '';
-    const forthNote = forthItem && forthItem.note
-      ? `<span class="lookup-vax-note forth-note">🇯🇵 ${escHtml(forthItem.note)}</span>`
-      : '';
+    const forthNoteText = forthItem && forthItem.note ? forthItem.note : '';
+
+    function noteHtml(txt, extraClass) {
+      if (!txt) return '';
+      const LIMIT = 60;
+      const short = txt.length > LIMIT ? txt.slice(0, LIMIT - 1) + '…' : txt;
+      const needsExpand = txt.length > LIMIT;
+      if (!needsExpand) return `<span class="lookup-vax-note${extraClass ? ' ' + extraClass : ''}">${escHtml(txt)}</span>`;
+      return `<span class="lookup-vax-note${extraClass ? ' ' + extraClass : ''} note-collapsible">
+        <span class="note-short">${escHtml(short)}<button class="note-expand-btn" tabindex="-1">もっと見る</button></span>
+        <span class="note-full" hidden>${escHtml(txt)}<button class="note-expand-btn" tabindex="-1">閉じる</button></span>
+      </span>`;
+    }
+
     return `<label class="lookup-vax-item ${levelClass}${checked ? ' selected' : ''}"${noId}${title}>
       <input type="checkbox" data-vid="${escHtml(vid||'')}" ${checked ? 'checked' : ''} ${!vid ? 'disabled' : ''}>
       <div class="lookup-vax-info">
         <span class="lookup-vax-name">${escHtml(nameJp)} ${forthBadge}</span>
-        ${cdcNoteJp ? `<span class="lookup-vax-note">${escHtml(cdcNoteJp)}</span>` : ''}
-        ${forthNote}
+        ${noteHtml(cdcNoteJp, '')}
+        ${forthNoteText ? noteHtml('🇯🇵 ' + forthNoteText, 'forth-note') : ''}
       </div>
       <span class="lookup-vax-level">${levelLabel}</span>
     </label>`;
@@ -1643,19 +1656,167 @@ function renderLookupHtml(cache, resultEl) {
       if (vid) selectVaccineFromLookup(vid, cb.checked, labelEl);
     });
     resultEl.addEventListener('click', function(e) {
-      const btn2 = e.target.closest('.lookup-add-all');
-      if (!btn2) return;
-      e.stopPropagation();
-      try { selectAllFromLookup(JSON.parse(btn2.dataset.addall)); } catch(err) {}
+      // すべて追加ボタン
+      const addAll = e.target.closest('.lookup-add-all');
+      if (addAll) { e.stopPropagation(); try { selectAllFromLookup(JSON.parse(addAll.dataset.addall)); } catch(err) {} return; }
+      // ノート展開／閉じるボタン
+      const expandBtn = e.target.closest('.note-expand-btn');
+      if (expandBtn) {
+        e.preventDefault(); e.stopPropagation();
+        const collapsible = expandBtn.closest('.note-collapsible');
+        if (!collapsible) return;
+        const shortEl = collapsible.querySelector('.note-short');
+        const fullEl  = collapsible.querySelector('.note-full');
+        const isExpanded = !fullEl.hidden;
+        shortEl.hidden = !isExpanded;
+        fullEl.hidden  =  isExpanded;
+      }
     });
   }
 }
 
-// CDC推奨テキストをそのまま返す（医療情報は原文維持）
+// CDC推奨テキストを文単位で日本語訳
 function translateCdcNote(text) {
   if (!text) return '';
+  if (/[぀-ヿ一-鿿]/.test(text)) return text;
   const t = text.trim();
-  return t.length > 160 ? t.slice(0, 158) + '…' : t;
+
+  // 文に分割して個別に翻訳
+  const sentences = t.match(/[^.!?]+[.!?]*/g) || [t];
+  const translated = sentences.map(s => translateCdcSentence(s.trim())).filter(Boolean);
+  return translated.join(' ');
+}
+
+function translateCdcSentence(s) {
+  if (!s || s.length < 3) return '';
+  const norm = s.replace(/\s+/g, ' ').trim();
+
+  // ── 予防措置 ──
+  if (/all travelers should take steps to prevent mosquito bites/i.test(norm))
+    return '全ての渡航者は蚊に刺されないよう対策を取ってください。';
+  if (/take steps to prevent mosquito bites/i.test(norm))
+    return '蚊に刺されないよう対策を取ってください。';
+  if (/take steps to avoid mosquito/i.test(norm))
+    return '蚊への接触を避ける対策を取ってください。';
+  if (/protect yourself from mosquito/i.test(norm))
+    return '蚊から身を守る対策を取ってください。';
+
+  // ── 「generally not recommended」 ──
+  if (/vaccination is generally not recommended/i.test(norm))
+    return 'ワクチン接種は通常推奨されていません。';
+  if (/vaccine is not recommended/i.test(norm))
+    return 'このワクチン接種は推奨されていません。';
+  if (/not recommended for most travelers/i.test(norm))
+    return 'ほとんどの渡航者には不要です。';
+
+  // ── 「Travelers who wish to consider vaccination」 ──
+  if (/travelers who wish to consider vaccination/i.test(norm))
+    return '接種を検討したい渡航者は、CDCのワクチンページ「渡航前の検討事項」をご確認ください。';
+
+  // ── 「Recommended for most travelers, especially」 ──
+  if (/recommended for most travelers.*especially.*friends or relatives.*rural/i.test(norm))
+    return 'ほとんどの渡航者に推奨。特に友人・親族宅での滞在や農村部・地方都市訪問者に推奨。';
+  if (/recommended for most travelers.*especially.*rural/i.test(norm))
+    return 'ほとんどの渡航者に推奨。特に農村部へ行く場合は推奨。';
+  if (/recommended for most travelers/i.test(norm))
+    return 'ほとんどの渡航者に推奨されます。';
+  if (/recommended for all travelers/i.test(norm))
+    return '全ての渡航者に推奨されます。';
+
+  // ── 「Recommended for unvaccinated travelers」 ──
+  if (/recommended for unvaccinated travelers.*1 year.*older/i.test(norm))
+    return '未接種の1歳以上の渡航者に推奨されます。';
+  if (/recommended for unvaccinated travelers.*going to/i.test(norm))
+    return '渡航先に向かう未接種の渡航者に推奨されます。';
+  if (/recommended for unvaccinated travelers/i.test(norm))
+    return '未接種の渡航者に推奨されます。';
+
+  // ── 「Recommended for travelers who」 ──
+  if (/recommended for travelers who.*moving.*area.*live.*month/i.test(norm))
+    return '1か月以上の長期滞在・移住予定の渡航者に推奨されます。';
+  if (/recommended for travelers who.*long.*time/i.test(norm))
+    return '長期滞在予定の渡航者に推奨されます。';
+  if (/recommended for travelers/i.test(norm))
+    return '渡航者に推奨されます。';
+
+  // ── 「Consider for」 ──
+  if (/consider for some travelers.*outdoor activities.*no air conditioning/i.test(norm))
+    return '屋外活動が多い方やエアコンなし・網戸なしの宿泊施設を利用する方は接種を検討してください。';
+  if (/consider for some travelers.*outdoor/i.test(norm))
+    return '屋外活動が多い渡航者は接種を検討してください。';
+  if (/consider for some travelers.*depending on.*activities/i.test(norm))
+    return '渡航中の活動内容によっては接種を検討してください。';
+  if (/consider for some travelers/i.test(norm))
+    return '一部の渡航者は接種を検討してください。';
+  if (/consider for travelers/i.test(norm))
+    return '渡航者は接種を検討してください。';
+
+  // ── マラリア予防薬 ──
+  if (/cdc recommends.*prescription medicine.*malaria/i.test(norm))
+    return 'CDCは特定地域への渡航者にマラリア予防薬の服用を推奨しています。';
+  if (/cdc recommends.*travelers.*areas.*take.*medicine/i.test(norm))
+    return 'CDCは特定地域への渡航者に予防薬の服用を推奨しています。';
+  if (/depending on the medicine you take/i.test(norm))
+    return '服用する薬の種類によっては、渡航前から飲み始める必要があります。';
+
+  // ── 麻しん ──
+  if (/cases of measles are on the rise/i.test(norm))
+    return '麻しんは世界的に増加しています。';
+  if (/travelers are at risk of measles.*not.*fully vaccinated/i.test(norm))
+    return '出発2週間前までに2回接種が完了していない渡航者は感染リスクがあります。';
+
+  // ── 狂犬病 ──
+  if (/dogs infected with rabies.*sometimes found/i.test(norm))
+    return '狂犬病に感染した犬が存在します。';
+  if (/if rabies exposures occur.*vaccines.*available/i.test(norm))
+    return '感染リスクにさらされた場合でも、国内各地でワクチン接種が可能です。';
+  if (/infected with rabies/i.test(norm))
+    return '狂犬病感染リスクがあります。';
+
+  // ── 黄熱 ──
+  if (/vaccine is not recommended.*country entry requirements.*not required.*travel from countries with risk/i.test(norm))
+    return '通常は不要ですが、黄熱流行国経由での入国時は要求される場合があります。';
+  if (/country entry requirements.*vaccine is not required/i.test(norm))
+    return '通常の入国では証明書は不要です。';
+  if (/travel from countries with risk.*yf/i.test(norm))
+    return '黄熱流行国から渡航する場合は接種証明が必要です。';
+  if (/country entry requirements/i.test(norm))
+    return '入国要件があります（渡航ルートによる）。';
+
+  // ── ルーチンワクチン ──
+  if (/make sure.*up-to-date.*routine.*vaccines/i.test(norm))
+    return 'ルーチンワクチンの接種が完了していることを確認してください。';
+  if (/up-to-date on all routine/i.test(norm))
+    return 'ルーチンワクチンの接種状況を確認してください。';
+
+  // ── 感染経路 ──
+  if (/spread.*contaminated food.*water/i.test(norm))
+    return '汚染された食物や水から感染します。';
+  if (/spread.*food.*water/i.test(norm))
+    return '食物・水から感染します。';
+  if (/spread.*mosquito/i.test(norm))
+    return '蚊から感染します。';
+  if (/spread.*tick/i.test(norm))
+    return 'マダニから感染します。';
+  if (/transmitted.*mosquito/i.test(norm))
+    return '蚊によって感染します。';
+
+  // ── 長期滞在・農村部 ──
+  if (/long.?term travelers.*rural/i.test(norm))
+    return '農村部への長期渡航者に推奨されます。';
+  if (/long.?term travelers/i.test(norm))
+    return '長期渡航者に推奨されます。';
+  if (/extended stay/i.test(norm))
+    return '長期滞在者は接種を検討してください。';
+
+  // ── 一般的な推奨文 ──
+  if (/travelers should.*check.*vaccin/i.test(norm))
+    return '渡航前に接種状況を確認してください。';
+  if (/travelers should/i.test(norm))
+    return '渡航者は確認・注意が必要です。';
+
+  // マッチしなければ原文のまま
+  return norm;
 }
 
 // セクションのアコーディオン開閉
