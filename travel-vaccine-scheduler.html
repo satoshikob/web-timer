@@ -1564,8 +1564,8 @@ function renderLookupHtml(cache, resultEl) {
       const needsExpand = txt.length > LIMIT;
       if (!needsExpand) return `<span class="lookup-vax-note${extraClass ? ' ' + extraClass : ''}"${lang}>${escHtml(txt)}</span>`;
       return `<span class="lookup-vax-note${extraClass ? ' ' + extraClass : ''} note-collapsible"${lang}>
-        <span class="note-short">${escHtml(short)}<button class="note-expand-btn" tabindex="-1">もっと見る</button></span>
-        <span class="note-full" hidden>${escHtml(txt)}<button class="note-expand-btn" tabindex="-1">閉じる</button></span>
+        <span class="note-short" hidden>${escHtml(short)}<button class="note-expand-btn" tabindex="-1">もっと見る</button></span>
+        <span class="note-full">${escHtml(txt)}<button class="note-expand-btn" tabindex="-1">閉じる</button></span>
       </span>`;
     }
 
