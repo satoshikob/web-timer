@@ -1570,6 +1570,10 @@ function renderLookupHtml(cache, resultEl) {
     }
 
     const forthNoteHtml = forthNoteText ? noteHtml('🇯🇵 ' + forthNoteText, 'forth-note', false) : '';
+    const isMalaria = nameJp.includes('マラリア');
+    const malariaExtra = isMalaria
+      ? `<span class="lookup-vax-note" style="margin-top:3px">マラリア予防薬の詳細は以下を参照：<br><a href="https://medgen.nihinmedia.jp/chat" target="_blank" style="color:#1a56db">https://medgen.nihinmedia.jp/chat</a></span>`
+      : '';
     const cdcNoteDisplay = cdcNote ? noteHtml(cdcNote, '', true) : '';
 
     return `<label class="lookup-vax-item ${levelClass}${checked ? ' selected' : ''}"${noId}${title}>
@@ -1578,6 +1582,7 @@ function renderLookupHtml(cache, resultEl) {
         <span class="lookup-vax-name">${escHtml(nameJp)} ${forthBadge}</span>
         ${cdcNoteDisplay}
         ${forthNoteHtml}
+        ${malariaExtra}
       </div>
       <span class="lookup-vax-level">${levelLabel}</span>
     </label>`;
