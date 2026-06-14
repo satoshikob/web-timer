@@ -547,6 +547,7 @@
       total = (parseInt(inputMin.value) || 0) * 60 + (parseInt(inputSec.value) || 0);
       remaining = total;
       if (total <= 0) { updateDisplay(); updateStartBtn(); setStatus('時間を設定してください'); return; }
+      saveLastSec(total);
       updateDisplay();
       timerStart();
     }
@@ -677,12 +678,27 @@
         clearInterval(interval); interval = null; running = false;
         display.classList.remove('running', 'finished');
         total = sec; remaining = sec;
+        saveLastSec(sec);
         updateDisplay(); setActivePreset(sec);
         timerStart();
       });
     });
 
+    /* ===== localStorage で最終使用秒数を保存・復元 ================= */
+    function saveLastSec(sec) {
+      try { localStorage.setItem('timer_last_sec', sec); } catch (_) {}
+    }
+    function loadLastSec() {
+      try { return parseInt(localStorage.getItem('timer_last_sec')) || 10; } catch (_) { return 10; }
+    }
+
     /* ===== 初期化 =================================================== */
+    const initSec = loadLastSec();
+    total = initSec;
+    remaining = initSec;
+    inputMin.value = Math.floor(initSec / 60);
+    inputSec.value = initSec % 60;
+
     updateDisplay();
     updateStartBtn();
     updateAccumDisplay();
