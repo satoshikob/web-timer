@@ -1589,6 +1589,18 @@ function renderLookupHtml(cache, resultEl) {
     const choleraExtra = isColera
       ? `<span class="lookup-vax-note" style="margin-top:3px">輸入ワクチン。<a href="https://www.vaccine4all.jp/news-detail.php?npage=2&amp;nid=133" target="_blank" style="color:#1a56db">ワクチン情報（Vaccine4all）</a></span>`
       : '';
+    // ワクチン別の追加情報（価格など）
+    const VAX_PRICE_NOTE = {
+      'A型肝炎': '16,390円（2026/06/15）',
+      'B型肝炎': '8,800円（2026/06/15）',
+      '日本脳炎': '7,550円（2026/06/15）',
+      '狂犬病': '17,600円（2026/06/15）',
+      '破傷風': '5,500円（2026/06/15）',
+    };
+    const priceKey = Object.keys(VAX_PRICE_NOTE).find(k => nameJp.includes(k));
+    const priceExtra = priceKey
+      ? `<span class="lookup-vax-note" style="margin-top:3px;color:#444">💴 ${VAX_PRICE_NOTE[priceKey]}</span>`
+      : '';
     const isChiku = nameJp.includes('チクングニア');
     const chikuExtra = isChiku
       ? `<span class="lookup-vax-note" style="margin-top:3px">チクングニア流行地域へ旅行する12歳以上の人に推奨。<br>※2026/06/15現在、取り扱いはトラベルクリニック東京のみ？</span>`
@@ -1603,6 +1615,7 @@ function renderLookupHtml(cache, resultEl) {
         ${forthNoteHtml}
         ${malariaExtra}
         ${choleraExtra}
+        ${priceExtra}
         ${chikuExtra}
       </div>
       <span class="lookup-vax-level">${levelLabel}</span>
