@@ -373,10 +373,10 @@
     .forth-note { color: #1a6b3a !important; border-left: 2px solid #a5d6a7; padding-left: 5px; margin-top: 2px; }
     .note-expand-btn { background: none; border: none; color: #1a6b3a; font-size: 0.7rem; cursor: pointer; padding: 0 3px; text-decoration: underline; vertical-align: baseline; }
     .note-expand-btn:hover { color: #0d4a26; }
-    .lookup-ref-links { margin-top: 12px; padding: 8px 10px; background: #f8fafb; border: 1px solid #e0e7ef; border-radius: 6px; font-size: 0.78rem; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-    .lookup-ref-title { color: #555; font-weight: 600; white-space: nowrap; }
-    .lookup-ref-links a { color: #1a56db; text-decoration: none; white-space: nowrap; }
-    .lookup-ref-links a:hover { text-decoration: underline; }
+    .sidebar-ref-links { padding: 10px 12px; border-top: 1px solid #dce3ea; font-size: 0.75rem; display: flex; flex-direction: column; gap: 4px; }
+    .sidebar-ref-title { color: #888; font-weight: 600; margin-bottom: 2px; }
+    .sidebar-ref-links a { color: #1a56db; text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .sidebar-ref-links a:hover { text-decoration: underline; }
     .lookup-vax-list { display: flex; flex-direction: column; gap: 5px; }
     .lookup-vax-item {
       display: grid;
@@ -490,6 +490,12 @@
     </div>
     <div class="patient-list" id="patient-list">
       <div class="empty-list">患者が登録されていません</div>
+    </div>
+    <div class="sidebar-ref-links">
+      <div class="sidebar-ref-title">📚 参照サイト</div>
+      <a href="https://www.vaccine4all.jp/" target="_blank">Vaccine4all</a>
+      <a href="https://plaza.umin.ac.jp/jstah/02travelclinics/index.html" target="_blank">トラベルクリニック学会</a>
+      <a href="http://jstm.gr.jp/vaccination-summary/" target="_blank">渡航医学会（ワクチン）</a>
     </div>
   </aside>
 
@@ -1669,13 +1675,6 @@ function renderLookupHtml(cache, resultEl) {
   if (hasForth && forthError) {
     html += `<div class="lookup-error" style="margin-top:6px">⚠️ FORTH情報を取得できませんでした。<a href="${escHtml(forthUrl)}" target="_blank" style="color:#1a6b3a">直接確認</a></div>`;
   }
-
-  html += `<div class="lookup-ref-links">
-    <span class="lookup-ref-title">📚 参照サイト</span>
-    <a href="https://www.vaccine4all.jp/" target="_blank">Vaccine4all（ワクチン情報）</a>
-    <a href="https://plaza.umin.ac.jp/jstah/02travelclinics/index.html" target="_blank">日本トラベルクリニック学会（施設一覧）</a>
-    <a href="http://jstm.gr.jp/vaccination-summary/" target="_blank">日本渡航医学会（ワクチンまとめ）</a>
-  </div>`;
 
   html += '</div>';
 
