@@ -373,6 +373,10 @@
     .forth-note { color: #1a6b3a !important; border-left: 2px solid #a5d6a7; padding-left: 5px; margin-top: 2px; }
     .note-expand-btn { background: none; border: none; color: #1a6b3a; font-size: 0.7rem; cursor: pointer; padding: 0 3px; text-decoration: underline; vertical-align: baseline; }
     .note-expand-btn:hover { color: #0d4a26; }
+    .lookup-ref-links { margin-top: 12px; padding: 8px 10px; background: #f8fafb; border: 1px solid #e0e7ef; border-radius: 6px; font-size: 0.78rem; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+    .lookup-ref-title { color: #555; font-weight: 600; white-space: nowrap; }
+    .lookup-ref-links a { color: #1a56db; text-decoration: none; white-space: nowrap; }
+    .lookup-ref-links a:hover { text-decoration: underline; }
     .lookup-vax-list { display: flex; flex-direction: column; gap: 5px; }
     .lookup-vax-item {
       display: grid;
@@ -1574,6 +1578,10 @@ function renderLookupHtml(cache, resultEl) {
     const malariaExtra = isMalaria
       ? `<span class="lookup-vax-note" style="margin-top:3px">マラリア予防薬の詳細は以下を参照：<br><a href="https://medgen.nihinmedia.jp/chat" target="_blank" style="color:#1a56db">https://medgen.nihinmedia.jp/chat</a></span>`
       : '';
+    const isChiku = nameJp.includes('チクングニア');
+    const chikuExtra = isChiku
+      ? `<span class="lookup-vax-note" style="margin-top:3px">チクングニア流行地域へ旅行する12歳以上の人に推奨。<br>※2026/06/15現在、取り扱いはトラベルクリニック東京のみ？</span>`
+      : '';
     const cdcNoteDisplay = cdcNote ? noteHtml(cdcNote, '', true) : '';
 
     return `<label class="lookup-vax-item ${levelClass}${checked ? ' selected' : ''}"${noId}${title}>
@@ -1583,6 +1591,7 @@ function renderLookupHtml(cache, resultEl) {
         ${cdcNoteDisplay}
         ${forthNoteHtml}
         ${malariaExtra}
+        ${chikuExtra}
       </div>
       <span class="lookup-vax-level">${levelLabel}</span>
     </label>`;
@@ -1660,6 +1669,14 @@ function renderLookupHtml(cache, resultEl) {
   if (hasForth && forthError) {
     html += `<div class="lookup-error" style="margin-top:6px">⚠️ FORTH情報を取得できませんでした。<a href="${escHtml(forthUrl)}" target="_blank" style="color:#1a6b3a">直接確認</a></div>`;
   }
+
+  html += `<div class="lookup-ref-links">
+    <span class="lookup-ref-title">📚 参照サイト</span>
+    <a href="https://www.vaccine4all.jp/" target="_blank">Vaccine4all（ワクチン情報）</a>
+    <a href="https://plaza.umin.ac.jp/jstah/02travelclinics/index.html" target="_blank">日本トラベルクリニック学会（施設一覧）</a>
+    <a href="http://jstm.gr.jp/vaccination-summary/" target="_blank">日本渡航医学会（ワクチンまとめ）</a>
+  </div>`;
+
   html += '</div>';
 
   resultEl.innerHTML = html;
