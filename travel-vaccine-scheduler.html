@@ -520,7 +520,8 @@ const VACCINE_CATEGORIES = [
         doses: [
           { num: 1, label: '①', dayOffset: 0, note: '1回接種。証明書は接種後10日目から有効・生涯有効' }
         ],
-        note: 'アフリカ・中南米の流行地への渡航・経由で要求される場合あり'
+        note: 'アフリカ・中南米の流行地への渡航・経由で要求される場合あり',
+        link: { label: '接種可能機関（FORTH）', url: 'https://www.forth.go.jp/moreinfo/topics/yellow_fever_certificate.html#h2_8' }
       },
       {
         id: 'hepa',
@@ -1585,6 +1586,10 @@ function renderLookupHtml(cache, resultEl) {
     const malariaExtra = isMalaria
       ? `<span class="lookup-vax-note" style="margin-top:3px">マラリア予防薬の詳細は以下を参照：<br><a href="https://medgen.nihinmedia.jp/chat" target="_blank" style="color:#1a56db">https://medgen.nihinmedia.jp/chat</a></span>`
       : '';
+    const isYellowFever = nameJp.includes('黄熱');
+    const yellowFeverExtra = isYellowFever
+      ? `<span class="lookup-vax-note" style="margin-top:3px">接種可能機関：<a href="https://www.forth.go.jp/moreinfo/topics/yellow_fever_certificate.html#h2_8" target="_blank" style="color:#1a56db">FORTH（厚生労働省）</a></span>`
+      : '';
     const isColera = nameJp.includes('コレラ');
     const choleraExtra = isColera
       ? `<span class="lookup-vax-note" style="margin-top:3px">輸入ワクチン。<a href="https://www.vaccine4all.jp/news-detail.php?npage=2&amp;nid=133" target="_blank" style="color:#1a56db">ワクチン情報（Vaccine4all）</a></span>`
@@ -1615,6 +1620,7 @@ function renderLookupHtml(cache, resultEl) {
         ${forthNoteHtml}
         ${malariaExtra}
         ${choleraExtra}
+        ${yellowFeverExtra}
         ${priceExtra}
         ${chikuExtra}
       </div>
