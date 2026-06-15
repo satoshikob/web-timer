@@ -532,7 +532,7 @@ const VACCINE_CATEGORIES = [
           { num: 2, label: '②', dayOffset: 28,  note: '①から2〜4週後' },
           { num: 3, label: '③', dayOffset: 180, note: '①から24週（6か月）後（長期免疫）' }
         ],
-        note: '発展途上国全般に推奨。1回でも短期効果あり'
+        note: '発展途上国全般に推奨。1回でも短期効果あり。16,390円（2026/06/15）'
       },
       {
         id: 'hepb',
@@ -547,7 +547,7 @@ const VACCINE_CATEGORIES = [
         altSchedules: [
           { label: '加速（0・7・21日）', offsets: [0, 7, 21], boosterDays: 365 }
         ],
-        note: '長期滞在・医療行為・性的接触リスクがある場合に推奨'
+        note: '長期滞在・医療行為・性的接触リスクがある場合に推奨。8,800円（2026/06/15）'
       },
       {
         id: 'typhoid',
@@ -574,7 +574,7 @@ const VACCINE_CATEGORIES = [
           { num: 2, label: '②', dayOffset: 28,  note: '①から7〜28日後' },
           { num: 3, label: '③', dayOffset: 365, note: '①から1年後（基礎免疫完了）' }
         ],
-        note: 'アジア農村部・田園地帯への長期滞在（4週以上）や屋外活動に推奨'
+        note: 'アジア農村部・田園地帯への長期滞在（4週以上）や屋外活動に推奨。7,550円（2026/06/15）'
       },
       {
         id: 'rabies',
@@ -586,7 +586,7 @@ const VACCINE_CATEGORIES = [
           { num: 2, label: '②', dayOffset: 7,  note: '①から7日後' },
           { num: 3, label: '③', dayOffset: 21, note: '①から21日後（または28日後）' }
         ],
-        note: 'アジア・アフリカ・中南米への長期滞在・野外活動・動物接触リスクがある場合'
+        note: 'アジア・アフリカ・中南米への長期滞在・野外活動・動物接触リスクがある場合。17,600円（2026/06/15）'
       },
       {
         id: 'meningococcal',
@@ -608,7 +608,8 @@ const VACCINE_CATEGORIES = [
           { num: 1, label: '①', dayOffset: 0,  note: '初回（1週間以上前に完了すること）' },
           { num: 2, label: '②', dayOffset: 14, note: '①から1〜6週後（2週後推奨）' }
         ],
-        note: 'コレラ流行地・衛生状態が悪い地域への渡航・NGO・医療従事者に推奨'
+        note: 'コレラ流行地・衛生状態が悪い地域への渡航・NGO・医療従事者に推奨。輸入ワクチン',
+        link: { label: 'ワクチン情報（Vaccine4all）', url: 'https://www.vaccine4all.jp/news-detail.php?npage=2&nid=133' }
       },
       {
         id: 'tick_encephalitis',
@@ -700,7 +701,7 @@ const VACCINE_CATEGORIES = [
           { num: 2, label: '②', dayOffset: 28,  note: '①から4週後' },
           { num: 3, label: '③', dayOffset: 365, note: '①から1年後（基礎免疫完了）' }
         ],
-        note: '基礎免疫あり（接種歴10年以内）なら追加1回のみ。土壌・動物・外傷リスクがある渡航に必須'
+        note: '基礎免疫あり（接種歴10年以内）なら追加1回のみ。土壌・動物・外傷リスクがある渡航に必須。5,500円（2026/06/15）'
       },
       {
         id: 'bcg',
@@ -725,7 +726,7 @@ const VACCINE_CATEGORIES = [
         doses: [
           { num: 1, label: '①', dayOffset: 0, note: '1回（18歳以上・Ixchiq）' }
         ],
-        note: 'アフリカ・アジア・中南米・カリブ海諸国への渡航（18歳以上）。⚠️ 日本国内未承認・輸入ワクチンなし（2026年2月現在）'
+        note: '流行地域へ旅行する12歳以上の人に推奨。※2026/06/15現在、取り扱いはトラベルクリニック東京のみ？'
       },
     ]
   }
@@ -1001,7 +1002,7 @@ function renderMain() {
                   <input type="checkbox" ${checked ? 'checked' : ''} onchange="toggleVaccine('${escHtml(v.id)}',this.closest('.vax-item'),this.checked)">
                   <div class="vax-item-text">
                     <div class="vax-item-name">${escHtml(v.name)}</div>
-                    <div class="vax-item-detail">${v.doses.length}回接種 · ${escHtml(v.note)}</div>
+                    <div class="vax-item-detail">${v.doses.length}回接種 · ${escHtml(v.note)}${v.link ? ` · <a href="${escHtml(v.link.url)}" target="_blank" onclick="event.stopPropagation()" style="color:#1a56db">${escHtml(v.link.label)}</a>` : ''}</div>
                   </div>
                 </label>`;
               }).join('')}
@@ -1584,6 +1585,10 @@ function renderLookupHtml(cache, resultEl) {
     const malariaExtra = isMalaria
       ? `<span class="lookup-vax-note" style="margin-top:3px">マラリア予防薬の詳細は以下を参照：<br><a href="https://medgen.nihinmedia.jp/chat" target="_blank" style="color:#1a56db">https://medgen.nihinmedia.jp/chat</a></span>`
       : '';
+    const isColera = nameJp.includes('コレラ');
+    const choleraExtra = isColera
+      ? `<span class="lookup-vax-note" style="margin-top:3px">輸入ワクチン。<a href="https://www.vaccine4all.jp/news-detail.php?npage=2&amp;nid=133" target="_blank" style="color:#1a56db">ワクチン情報（Vaccine4all）</a></span>`
+      : '';
     const isChiku = nameJp.includes('チクングニア');
     const chikuExtra = isChiku
       ? `<span class="lookup-vax-note" style="margin-top:3px">チクングニア流行地域へ旅行する12歳以上の人に推奨。<br>※2026/06/15現在、取り扱いはトラベルクリニック東京のみ？</span>`
@@ -1597,6 +1602,7 @@ function renderLookupHtml(cache, resultEl) {
         ${cdcNoteDisplay}
         ${forthNoteHtml}
         ${malariaExtra}
+        ${choleraExtra}
         ${chikuExtra}
       </div>
       <span class="lookup-vax-level">${levelLabel}</span>
