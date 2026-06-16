@@ -369,6 +369,7 @@
     .lookup-source-bar a { color: #1a56db; text-decoration: none; }
     .lookup-source-bar a:hover { text-decoration: underline; }
     .gt-link { margin-left: 6px; background: #f0f4ff; border: 1px solid #c7d2fe; border-radius: 4px; padding: 1px 6px; font-size: 0.75rem; color: #3730a3 !important; white-space: nowrap; }
+    .route-badge { display: inline-block; font-size: 0.68rem; background: #fff3e0; color: #8a5a00; border: 1px solid #ffd699; border-radius: 4px; padding: 1px 5px; vertical-align: middle; margin-left: 4px; white-space: nowrap; }
     .forth-badge { display: inline-block; font-size: 0.68rem; background: #e8f5e9; color: #1a6b3a; border: 1px solid #a5d6a7; border-radius: 4px; padding: 1px 5px; vertical-align: middle; margin-left: 4px; white-space: nowrap; }
     .forth-note { color: #1a6b3a !important; border-left: 2px solid #a5d6a7; padding-left: 5px; margin-top: 2px; }
     .note-expand-btn { background: none; border: none; color: #1a6b3a; font-size: 0.7rem; cursor: pointer; padding: 0 3px; text-decoration: underline; vertical-align: baseline; }
@@ -1610,12 +1611,40 @@ function renderLookupHtml(cache, resultEl) {
     const chikuExtra = isChiku
       ? `<span class="lookup-vax-note" style="margin-top:3px">チクングニア流行地域へ旅行する12歳以上の人に推奨。<br>※2026/06/15現在、取り扱いはトラベルクリニック東京のみ？</span>`
       : '';
+    // ワクチンなし・流通状況などの追加情報
+    const VAX_EXTRA_NOTE = {
+      'レプトスピラ症':       'ワクチンなし。汚染水を避ける。',
+      'デング熱ワクチン':     'タイ・マレーシアなどで現地接種。日本で輸入不可？',
+      'ジカ熱':               'ワクチンなし。蚊対策が中心。',
+      'ハンタウイルス感染症': '2026/06現在、ワクチンは韓国・中国のみで流通。',
+    };
+    const extraKey = Object.keys(VAX_EXTRA_NOTE).find(k => nameJp.includes(k));
+    const vaxExtraNote = extraKey
+      ? `<span class="lookup-vax-note" style="margin-top:3px">${escHtml(VAX_EXTRA_NOTE[extraKey])}</span>`
+      : '';
+    // 感染経路バッジ
+    const TRANSMISSION_ROUTE = {
+      'A型肝炎': '経口（汚染食品・水）', 'B型肝炎': '血液・体液',
+      '腸チフス': '経口（汚染食品・水）', '狂犬病': '動物咬傷',
+      '日本脳炎': '蚊', '黄熱': '蚊', 'コレラ': '経口（汚染水）',
+      '髄膜炎菌': '飛沫', 'マラリア': '蚊', 'デング熱ワクチン': '蚊',
+      'チクングニア': '蚊', '破傷風': '創傷（土壌）',
+      '水痘': '飛沫・接触', '麻しん': '飛沫・空気', '風しん': '飛沫',
+      'おたふくかぜ': '飛沫', 'BCG（結核）': '空気（飛沫核）',
+      'ポリオ': '経口（糞口）', 'インフルエンザ': '飛沫', 'COVID-19': '飛沫・接触',
+      'レプトスピラ症': '汚染水・土への接触', 'ジカ熱': '蚊',
+      'ハンタウイルス感染症': '空気（ネズミ排泄物）', 'ダニ媒介脳炎': 'マダニ',
+    };
+    const routeKey = Object.keys(TRANSMISSION_ROUTE).find(k => nameJp.includes(k));
+    const routeBadge = routeKey
+      ? `<span class="route-badge">🦟 ${escHtml(TRANSMISSION_ROUTE[routeKey])}</span>`
+      : '';
     const cdcNoteDisplay = cdcNote ? noteHtml(cdcNote, '', true) : '';
 
     return `<label class="lookup-vax-item ${levelClass}${checked ? ' selected' : ''}"${noId}${title}>
       <input type="checkbox" data-vid="${escHtml(vid||'')}" ${checked ? 'checked' : ''} ${!vid ? 'disabled' : ''}>
       <div class="lookup-vax-info">
-        <span class="lookup-vax-name">${escHtml(nameJp)} ${forthBadge}</span>
+        <span class="lookup-vax-name">${escHtml(nameJp)} ${forthBadge} ${routeBadge}</span>
         ${cdcNoteDisplay}
         ${forthNoteHtml}
         ${malariaExtra}
@@ -1623,6 +1652,7 @@ function renderLookupHtml(cache, resultEl) {
         ${yellowFeverExtra}
         ${priceExtra}
         ${chikuExtra}
+        ${vaxExtraNote}
       </div>
       <span class="lookup-vax-level">${levelLabel}</span>
     </label>`;
