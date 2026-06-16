@@ -623,7 +623,8 @@ const VACCINE_CATEGORIES = [
           { num: 2, label: '②', dayOffset: 30, note: '①から1〜3か月後' },
           { num: 3, label: '③', dayOffset: 180, note: '①から6か月後' }
         ],
-        note: '中央ヨーロッパ・ロシア・北海道の森林地帯でのアウトドア活動'
+        note: '中央ヨーロッパ・ロシア・北海道の森林地帯でのアウトドア活動',
+        link: { label: 'ワクチン情報（Vaccine4all）', url: 'https://www.vaccine4all.jp/news-detail.php?npage=2&nid=157' }
       },
     ]
   },
@@ -1594,6 +1595,10 @@ function renderLookupHtml(cache, resultEl) {
     const yellowFeverExtra = isYellowFever
       ? `<span class="lookup-vax-note" style="margin-top:3px">接種可能機関：<a href="https://www.forth.go.jp/moreinfo/topics/yellow_fever_certificate.html#h2_8" target="_blank" style="color:#1a56db">FORTH（厚生労働省）</a></span>`
       : '';
+    const isTBE = nameJp.includes('ダニ媒介脳炎');
+    const tbeExtra = isTBE
+      ? `<span class="lookup-vax-note" style="margin-top:3px"><a href="https://www.vaccine4all.jp/news-detail.php?npage=2&amp;nid=157" target="_blank" style="color:#1a56db">ワクチン情報（Vaccine4all）</a></span>`
+      : '';
     const isColera = nameJp.includes('コレラ');
     const choleraExtra = isColera
       ? `<span class="lookup-vax-note" style="margin-top:3px">輸入ワクチン。<a href="https://www.vaccine4all.jp/news-detail.php?npage=2&amp;nid=133" target="_blank" style="color:#1a56db">ワクチン情報（Vaccine4all）</a></span>`
@@ -1655,6 +1660,7 @@ function renderLookupHtml(cache, resultEl) {
         ${yellowFeverExtra}
         ${priceExtra}
         ${chikuExtra}
+        ${tbeExtra}
         ${vaxExtraNote}
       </div>
       <span class="lookup-vax-level">${levelLabel}</span>
