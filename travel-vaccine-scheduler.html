@@ -543,7 +543,7 @@ const VACCINE_CATEGORIES = [
         badgeLabel: '強く推奨',
         doses: [
           { num: 1, label: '①', dayOffset: 0,  note: '初回' },
-          { num: 2, label: '②', dayOffset: 30, note: '①から1か月後' },
+          { num: 2, label: '②', dayOffset: 28, note: '①から4週（28日）後' },
           { num: 3, label: '③', dayOffset: 140, note: '①から20週（約5か月）後' }
         ],
         altSchedules: [
@@ -765,7 +765,11 @@ function toInputDate(d) {
   if (!d) return '';
   const dt = typeof d === 'string' ? new Date(d) : d;
   if (isNaN(dt)) return '';
-  return dt.toISOString().slice(0, 10);
+  // ローカル日付で構築（toISOString()はUTC変換で日付がずれるため使わない）
+  const y = dt.getFullYear();
+  const m = String(dt.getMonth() + 1).padStart(2, '0');
+  const day = String(dt.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
 }
 
 function formatDate(d) {
@@ -1132,13 +1136,13 @@ function generateSchedule() {
 
   let html = `<table class="schedule-table">
     <thead><tr>
-      <th>接種日</th><th>ワクチン</th><th>回数</th><th>種別</th><th>備考</th><th style="text-align:center">接種済</th>
+      <th>ワクチン</th><th>回数</th><th>種別</th><th>備考</th><th style="text-align:center">接種済</th>
     </tr></thead>
     <tbody>`;
 
   let warningShown = false;
   Object.entries(grouped).sort().forEach(([dateStr, dateRows]) => {
-    const dt = new Date(dateStr);
+    const dt = dateRows[0].scheduledDate;
     const isPast = dt < today;
     const isToday = dateStr === toInputDate(today);
     const afterTravel = travelDate && dt > travelDate;
@@ -1148,12 +1152,11 @@ function generateSchedule() {
     if (afterTravel) groupLabel += ' ⚠️ 渡航後';
 
     const rowspan = dateRows.length;
-    html += `<tr class="date-group-header"><td colspan="6">${groupLabel}${dateRows.length > 1 ? ` （${dateRows.length}種同日接種可能）` : ''}</td></tr>`;
+    html += `<tr class="date-group-header"><td colspan="5">${groupLabel}${dateRows.length > 1 ? ` （${dateRows.length}種同日接種可能）` : ''}</td></tr>`;
 
     dateRows.forEach((r, i) => {
       const doneClass = r.done ? ' class="row-done"' : '';
       html += `<tr${doneClass}>
-        <td>${formatDate(r.scheduledDate)}</td>
         <td style="font-weight:600">${escHtml(r.vaccine.name)}</td>
         <td>${escHtml(r.dose.label)}</td>
         <td>${badgeHtml(r.vaccine)}</td>
