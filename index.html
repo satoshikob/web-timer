@@ -647,7 +647,9 @@
     tabSW.addEventListener('click',    () => switchMode('stopwatch'));
     btnStart.addEventListener('click', toggleStartStop);
     btnReset.addEventListener('click', doReset);
-    display.addEventListener('click',  toggleStartStop);
+    // タッチデバイス（iPad等）はタップでリセット、マウス操作はスタート/ストップ
+    const isTouch = navigator.maxTouchPoints > 0;
+    display.addEventListener('click', isTouch ? doReset : toggleStartStop);
     btnAccumReset.addEventListener('click', () => {
       accumMs = 0;
       accumRunStart = running ? Date.now() : 0;
