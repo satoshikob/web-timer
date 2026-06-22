@@ -1619,6 +1619,14 @@ function renderLookupHtml(cache, resultEl) {
     const chikuExtra = isChiku
       ? `<span class="lookup-vax-note" style="margin-top:3px">チクングニア流行地域へ旅行する12歳以上の人に推奨。<br>※2026/06/15現在、取り扱いはトラベルクリニック東京のみ？</span>`
       : '';
+    const isTyphoid = nameJp.includes('腸チフス');
+    const typhoidExtra = isTyphoid
+      ? `<span class="lookup-vax-note" style="margin-top:3px">1回接種のみ。<a href="https://www.vaccine4all.jp/news-detail.php?npage=2&amp;nid=137" target="_blank" style="color:#1a56db">ワクチン情報（Vaccine4all）</a></span>`
+      : '';
+    const isRabies = nameJp.includes('狂犬病');
+    const rabiesExtra = isRabies
+      ? `<span class="lookup-vax-note" style="margin-top:3px">⚠️ 接種の有無に関わらず、曝露後は<strong>すぐに現地医療機関を受診</strong>して曝露後予防接種（PEP）を受けること。<br>既接種者：0日・3日の2回接種。<a href="https://www.cdc.gov/rabies/hcp/clinical-care/post-exposure-prophylaxis.html" target="_blank" style="color:#1a56db">CDC（PEP）</a></span>`
+      : '';
     // ワクチンなし・流通状況などの追加情報
     const VAX_EXTRA_NOTE = {
       'レプトスピラ症':       'ワクチンなし。汚染水を避ける。',
@@ -1660,6 +1668,8 @@ function renderLookupHtml(cache, resultEl) {
         ${yellowFeverExtra}
         ${priceExtra}
         ${chikuExtra}
+        ${typhoidExtra}
+        ${rabiesExtra}
         ${tbeExtra}
         ${vaxExtraNote}
       </div>
